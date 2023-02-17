@@ -48,10 +48,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut contents = Vec::<u8>::new();
     file.read_to_end(&mut contents)?;
 
-    let mut instruction_printed = 0;
+    let mut instructions_printed = 0;
     for i in (args.start..contents.len()).step_by(2) {
-        instruction_printed += 1;
-        if instruction_printed == args.instruction_amount {
+        instructions_printed += 1;
+        if instructions_printed == args.instruction_amount {
             break;
         }
         if i+1 == contents.len() {
