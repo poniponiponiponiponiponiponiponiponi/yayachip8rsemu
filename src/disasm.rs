@@ -1,5 +1,6 @@
 use core::fmt;
 
+#[derive(Debug)]
 #[derive(Clone, Copy)]
 pub enum InstructionType {
     CallRca1802CodeRoutine,
@@ -37,6 +38,7 @@ pub enum InstructionType {
     StoreBcd,
     RegDump,
     RegLoad,
+    BadInstruction,
 }
 
 impl InstructionType {
@@ -52,6 +54,7 @@ impl InstructionType {
             Self::SkipRegsEq => "skip_eq",
             Self::SetVal => "set",
             Self::AddVal => "add",
+            Self::SubReg => "sub",
             Self::SetReg => "set",
             Self::OrReg => "or",
             Self::AndReg => "and",
@@ -76,11 +79,13 @@ impl InstructionType {
             Self::StoreBcd => "store_bcd",
             Self::RegDump => "reg_dump",
             Self::RegLoad => "reg_load",
+            Self::BadInstruction => "bad_instruction",
             _ => panic!("bad instruction type")
         }
     }
 }
 
+#[derive(Debug)]
 pub struct Instruction {
     pub instruction_type: InstructionType,
     pub args: String,
@@ -94,7 +99,7 @@ impl Instruction {
 
 impl fmt::Display for Instruction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "{} {}",
+        write!(f, "{} {}",
                  InstructionType::get_string(self.instruction_type),
                  self.args,
         )?;
@@ -117,7 +122,7 @@ fn find_instruction_func(inst: u16) -> fn(u16) -> Instruction {
         skip_eq
     } else if inst & 0xf000 == 0x4000 {
         skip_neq
-    } else if inst & 0xf000 == 0x5000 {
+    } else if inst & 0xf000 == 0x5000 && inst & 0x000f == 0 {
         skip_regs_eq
     } else if inst & 0xf000 == 0x6000 {
         set_val
@@ -174,7 +179,7 @@ fn find_instruction_func(inst: u16) -> fn(u16) -> Instruction {
     } else if inst & 0xf000 == 0xf000 && inst & 0x00ff == 0x65 {
         reg_load
     } else {
-        panic!("bad instruction");
+        bad_instruction
     }
 }
 
@@ -561,5 +566,13 @@ fn reg_load(inst: u16) -> Instruction {
     Instruction {
         instruction_type: InstructionType::RegLoad,
         args: format!("reg[{}]", x),
+    }
+}
+
+// everything else
+fn bad_instruction(_inst: u16) -> Instruction {
+    Instruction {
+        instruction_type: InstructionType::BadInstruction,
+        args: format!(""),
     }
 }

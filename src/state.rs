@@ -49,7 +49,7 @@ impl Chip8State {
             Chip8State::skip_eq
         } else if inst & 0xf000 == 0x4000 {
             Chip8State::skip_neq
-        } else if inst & 0xf000 == 0x5000 {
+        } else if inst & 0xf000 == 0x5000 && inst & 0x000f == 0 {
             Chip8State::skip_regs_eq
         } else if inst & 0xf000 == 0x6000 {
             Chip8State::set_val
