@@ -216,7 +216,7 @@ fn jmp(inst: u16) -> Instruction {
     let nnn = inst & 0x0fff;
     Instruction {
         instruction_type: InstructionType::Jmp,
-        args: format!("{}", nnn),
+        args: format!("{:04x}", nnn),
     }
 }
 
@@ -226,7 +226,7 @@ fn call(inst: u16) -> Instruction {
     let nnn = inst & 0x0fff;
     Instruction {
         instruction_type: InstructionType::Call,
-        args: format!("{}", nnn),
+        args: format!("{:04x}", nnn),
     }
 }
 
@@ -237,7 +237,7 @@ fn skip_eq(inst: u16) -> Instruction {
     let x = ((inst & 0x0f00) >> 8) as usize;
     Instruction {
         instruction_type: InstructionType::SkipEq,
-        args: format!("reg[{}] {}", x, nn),
+        args: format!("reg[{}] {:02x}", x, nn),
     }
 }
 
@@ -248,7 +248,7 @@ fn skip_neq(inst: u16) -> Instruction {
     let x = ((inst & 0x0f00) >> 8) as usize;
     Instruction {
         instruction_type: InstructionType::SkipNeq,
-        args: format!("reg[{}] {}", x, nn),
+        args: format!("reg[{}] {:02x}", x, nn),
     }
 }
 
@@ -271,7 +271,7 @@ fn set_val(inst: u16) -> Instruction {
     let nn: u8 = (inst & 0x00ff) as u8;
     Instruction {
         instruction_type: InstructionType::SetVal,
-        args: format!("reg[{}] {}", x, nn),
+        args: format!("reg[{}] {:02x}", x, nn),
     }
 }
 
@@ -282,7 +282,7 @@ fn add_val(inst: u16) -> Instruction {
     let nn: u8 = (inst & 0x00ff) as u8;
     Instruction {
         instruction_type: InstructionType::AddVal,
-        args: format!("reg[{}] {}", x, nn),
+        args: format!("reg[{}] {:02x}", x, nn),
     }
 }
 
@@ -410,7 +410,7 @@ fn set_addr(inst: u16) -> Instruction {
     let nnn = (inst & 0x0fff) as u16;
     Instruction {
         instruction_type: InstructionType::SetAddr,
-        args: format!("I {}", nnn),
+        args: format!("I {:04x}", nnn),
     }
 }
 
@@ -420,7 +420,7 @@ fn jmp_plus(inst: u16) -> Instruction {
     let nnn = inst & 0x0fff;
     Instruction {
         instruction_type: InstructionType::JmpPlus,
-        args: format!("{} + reg[0]", nnn),
+        args: format!("{:04x} + reg[0]", nnn),
     }
 }
 
@@ -431,7 +431,7 @@ fn rand(inst: u16) -> Instruction {
     let nn: u8 = (inst & 0xff) as u8;
     Instruction {
         instruction_type: InstructionType::Rand,
-        args: format!("reg[{}] {}", x, nn),
+        args: format!("reg[{}] {:02x}", x, nn),
     }
 }
 
@@ -443,7 +443,7 @@ fn draw(inst: u16) -> Instruction {
     let n: u8 = (inst & 0xf) as u8;
     Instruction {
         instruction_type: InstructionType::Draw,
-        args: format!("reg[{}] reg[{}] {}", x, y, n),
+        args: format!("reg[{}] reg[{}] {:02x}", x, y, n),
     }
 }
 
