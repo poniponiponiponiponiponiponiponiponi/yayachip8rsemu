@@ -27,6 +27,89 @@ impl Chip8State {
         }
     }
 
+    pub fn execute_instruction(&mut self) {
+        let inst = self.memory.read(self.pc as usize, 2);
+        let bytes = [inst[0], inst[1]];
+        let inst = u16::from_be_bytes(bytes);
+        Chip8State::find_instruction_func(inst)(self, inst);
+    }
+
+    pub fn find_instruction_func(inst: u16) -> fn(&mut Chip8State, u16) {
+        if inst == 0x00e0 {
+            Chip8State::clear_display
+        } else if inst == 0x00ee {
+            Chip8State::return_from_subroutine
+        } else if inst & 0xf000 == 0x0000 {
+            Chip8State::call_rca1802_code_routine
+        } else if inst & 0xf000 == 0x1000 {
+            Chip8State::jmp
+        } else if inst & 0xf000 == 0x2000 {
+            Chip8State::call
+        } else if inst & 0xf000 == 0x3000 {
+            Chip8State::skip_eq
+        } else if inst & 0xf000 == 0x4000 {
+            Chip8State::skip_neq
+        } else if inst & 0xf000 == 0x5000 {
+            Chip8State::skip_regs_eq
+        } else if inst & 0xf000 == 0x6000 {
+            Chip8State::set_val
+        } else if inst & 0xf000 == 0x7000 {
+            Chip8State::add_val
+        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0 {
+            Chip8State::set_reg
+        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 1 {
+            Chip8State::or_reg
+        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 2 {
+            Chip8State::and_reg
+        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 3 {
+            Chip8State::xor_reg
+        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 4 {
+            Chip8State::add_reg
+        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 5 {
+            Chip8State::sub_reg
+        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 6 {
+            Chip8State::rsh_reg
+        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 7 {
+            Chip8State::reverse_sub_reg
+        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0xe {
+            Chip8State::lsh_reg
+        } else if inst & 0xf000 == 0x9000 && inst & 0x000f == 0 {
+            Chip8State::skip_regs_neq
+        } else if inst & 0xf000 == 0xa000 {
+            Chip8State::set_addr
+        } else if inst & 0xf000 == 0xb000 {
+            Chip8State::jmp_plus
+        } else if inst & 0xf000 == 0xc000 {
+            Chip8State::rand
+        } else if inst & 0xf000 == 0xd000 {
+            Chip8State::draw
+        } else if inst & 0xf000 == 0xe000 && inst & 0x00ff == 0xe9 {
+            Chip8State::skip_if_pressed
+        } else if inst & 0xf000 == 0xe000 && inst & 0x00ff == 0xa1 {
+            Chip8State::skip_if_not_pressed
+        } else if inst & 0xf000 == 0xf000 && inst & 0x00ff == 0x07 {
+            Chip8State::get_delay_timer
+        } else if inst & 0xf000 == 0xf000 && inst & 0x00ff == 0x0a {
+            Chip8State::get_keypress
+        } else if inst & 0xf000 == 0xf000 && inst & 0x00ff == 0x15 {
+            Chip8State::set_delay_timer
+        } else if inst & 0xf000 == 0xf000 && inst & 0x00ff == 0x18 {
+            Chip8State::set_sound_timer
+        } else if inst & 0xf000 == 0xf000 && inst & 0x00ff == 0x1e {
+            Chip8State::add_to_addr
+        } else if inst & 0xf000 == 0xf000 && inst & 0x00ff == 0x29 {
+            Chip8State::set_addr_to_sprite_addr
+        } else if inst & 0xf000 == 0xf000 && inst & 0x00ff == 0x33 {
+            Chip8State::store_bcd
+        } else if inst & 0xf000 == 0xf000 && inst & 0x00ff == 0x55 {
+            Chip8State::reg_dump
+        } else if inst & 0xf000 == 0xf000 && inst & 0x00ff == 0x65 {
+            Chip8State::reg_load
+        } else {
+            panic!("bad instruction");
+        }
+    }
+
     // 0NNN
     pub fn call_rca1802_code_routine(&mut self, inst: u16) {
         assert!((inst & 0xf000) >> 12 == 0);
@@ -215,7 +298,7 @@ impl Chip8State {
     }
 
     // 9XY0
-    pub fn skip_inst(&mut self, inst: u16) {
+    pub fn skip_regs_neq(&mut self, inst: u16) {
         assert!((inst & 0xf000) >> 12 == 9);
         assert!(inst & 0x000f == 0);
         let x = ((inst & 0x0f00) >> 8) as usize;
@@ -256,7 +339,7 @@ impl Chip8State {
         // TODO
         assert!((inst & 0xf000) >> 12 == 0xd);
         let x = ((inst & 0x0f00) >> 8) as usize;
-        let x = ((inst & 0x00f0) >> 4) as usize;
+        let y = ((inst & 0x00f0) >> 4) as usize;
         let n: u8 = (inst & 0xf) as u8;
         self.pc += 2;
     }
@@ -365,6 +448,7 @@ impl Chip8State {
             let to_write = self.reg[i].to_ne_bytes();
             self.memory.write(self.addr as usize + i, &to_write);
         }
+        self.pc += 2
     }
 
     // FX65
@@ -377,5 +461,6 @@ impl Chip8State {
             let value = readed[0];
             self.reg[i] = value;
         }
+        self.pc += 2;
     }
 }
