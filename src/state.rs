@@ -3,15 +3,15 @@ use crate::memory::Memory;
 use rand::Rng;
 
 pub struct Chip8State {
-    pc: u16,
+    pub pc: u16,
     // V0 to VF
-    reg: [u8; 16],
+    pub reg: [u8; 16],
     // The I address register
-    addr: u16,
-    stack: Stack,
-    memory: Memory,
-    delay_timer: u8,
-    sound_timer: u8,
+    pub addr: u16,
+    pub stack: Stack,
+    pub memory: Memory,
+    pub delay_timer: u8,
+    pub sound_timer: u8,
 }
 
 impl Chip8State {
@@ -24,6 +24,24 @@ impl Chip8State {
             memory: Memory::new(),
             delay_timer: 0,
             sound_timer: 0,
+        }
+    }
+
+    pub fn from_memory(memory: Vec<u8>) -> Chip8State {
+        Chip8State {
+            pc: 0,
+            reg: [0; 16],
+            addr: 0,
+            stack: Stack::new(),
+            memory: Memory::from_vec(memory),
+            delay_timer: 0,
+            sound_timer: 0,
+        }
+    }
+
+    pub fn load_memory(&mut self, to_load: Vec<u8>, offset: usize) {
+        for (i, &byte) in to_load.iter().enumerate() {
+            self.memory.memory[i] = byte;
         }
     }
 
@@ -197,7 +215,7 @@ impl Chip8State {
         assert!((inst & 0xf000) >> 12 == 7);
         let x = ((inst & 0x0f00) >> 8) as usize;
         let nn: u8 = (inst & 0x00ff) as u8;
-        self.reg[x] += nn;
+        self.reg[x] = self.reg[x].wrapping_add(nn);
         self.pc += 2;
     }
 
@@ -207,7 +225,7 @@ impl Chip8State {
         assert!(inst & 0x000f == 0);
         let x = ((inst & 0x0f00) >> 8) as usize;
         let y = ((inst & 0x00f0) >> 4) as usize;
-        self.reg[x] += self.reg[y];
+        self.reg[x] = self.reg[y];
         self.pc += 2;
     }
 

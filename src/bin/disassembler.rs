@@ -41,7 +41,6 @@ fn reset_sigpipe() {
 
 fn main() -> Result<(), Box<dyn Error>> {
     reset_sigpipe();
-    println!("sstart");
     let args = Args::parse();
 
     let mut file = File::open(args.file)?;
@@ -61,7 +60,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let byte2 = contents[i+1];
         let word = ((byte1 as u16) << 8) | byte2 as u16;
         let instruction = disasm::Instruction::from(word);
-        println!("{:04x}:\t{}", word, instruction);
+        println!("{:04x}:\t{:04x} {}", i, word, instruction);
     }
 
     Ok(())

@@ -3,7 +3,7 @@ use std::ops::Shl;
 use std::ops::BitAnd;
 
 pub struct Memory {
-    memory: [u8; 4096],
+    pub memory: [u8; 4096],
 }
 
 impl Memory {
@@ -11,6 +11,14 @@ impl Memory {
         Memory {
             memory: [0; 4096],
         }
+    }
+
+    pub fn from_vec(vec: Vec::<u8>) -> Memory {
+        let mut memory = Memory::new();
+        for (i, &byte) in vec.iter().enumerate() {
+            memory.memory[i] = byte;
+        }
+        memory
     }
 
     pub fn write(&mut self, beg: usize, to_write: &[u8]) {

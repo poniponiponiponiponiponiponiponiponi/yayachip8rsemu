@@ -80,7 +80,6 @@ impl InstructionType {
             Self::RegDump => "reg_dump",
             Self::RegLoad => "reg_load",
             Self::BadInstruction => "bad_instruction",
-            _ => panic!("bad instruction type")
         }
     }
 }
