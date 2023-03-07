@@ -1,6 +1,7 @@
 use std::mem::size_of;
+use core::fmt::Display;
 use std::ops::Shl;
-use std::ops::BitAnd;
+use std::ops::BitOr;
 
 pub struct Memory {
     pub memory: [u8; 4096],
@@ -35,12 +36,24 @@ impl Memory {
         ret
     }
 
-    pub fn read_t<T: Default + Shl<usize, Output = T> + BitAnd<u8, Output = T>>
-        (&self, beg: usize) {
+    pub fn read_t<T: Default + Shl<usize, Output = T> + BitOr<u8, Output = T> + Display>
+        (&self, beg: usize) -> T {
         let size = size_of::<T>();
         let mut number: T = T::default();
+        // This might seem like a weird way to do this and you're right - it is.
+        // However I can't find a way to easily get rid of the 'attempt to shift
+        // left with overflow' error with a generic...
+        // There's the "num" crate but for some reasons it only provides traits for
+        // numeric operations and not binary operations which is not helpful at all.
+        let mut first_byte = true;
         for &byte in self.memory[beg..beg+size].iter() {
-            number = (number << 8) & byte;
+            if first_byte {
+                number = number | byte;
+                first_byte = false;
+            } else {
+                number = (number << 8) | byte;
+            }
         }
+        number
     }
 }

@@ -12,6 +12,7 @@ pub struct Chip8State {
     pub memory: Memory,
     pub delay_timer: u8,
     pub sound_timer: u8,
+    pub screen: [[bool; 64]; 32],
 }
 
 impl Chip8State {
@@ -24,6 +25,7 @@ impl Chip8State {
             memory: Memory::new(),
             delay_timer: 0,
             sound_timer: 0,
+            screen: [[false; 64]; 32],
         }
     }
 
@@ -36,6 +38,7 @@ impl Chip8State {
             memory: Memory::from_vec(memory),
             delay_timer: 0,
             sound_timer: 0,
+            screen: [[false; 64]; 32],
         }
     }
 
@@ -138,7 +141,7 @@ impl Chip8State {
     // 00E0
     pub fn clear_display(&mut self, inst: u16) {
         assert!(inst == 0x00e0);
-        // TODO
+        self.screen = [[false; 64]; 32];
         self.pc += 2;
     }
 
@@ -354,11 +357,28 @@ impl Chip8State {
 
     // DXYN
     pub fn draw(&mut self, inst: u16) {
-        // TODO
         assert!((inst & 0xf000) >> 12 == 0xd);
         let x = ((inst & 0x0f00) >> 8) as usize;
         let y = ((inst & 0x00f0) >> 4) as usize;
         let n: u8 = (inst & 0xf) as u8;
+
+        let x = self.reg[x] as usize;
+        let y = self.reg[y] as usize;
+        let mut carry = 0;
+        for i in 0..=n {
+            let byte = self.memory.read_t::<u8>(self.addr as usize +i as usize);
+            for j in 0..8 {
+                let x = x + j as usize;
+                let y = y + i as usize;
+                let bit = ((byte >> (7-j)) & 1) == 1;
+                let before = self.screen[y][x];
+                self.screen[y][x] ^= bit;
+                if before && !self.screen[y][x] {
+                    carry = 1;
+                }
+            }
+        }
+        self.reg[0xf] = carry;
         self.pc += 2;
     }
 
