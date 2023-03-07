@@ -282,7 +282,7 @@ impl Chip8State {
         let y = ((inst & 0x00f0) >> 4) as usize;
         let (result, borrow) = self.reg[x].overflowing_sub(self.reg[y]);
         self.reg[x] = result;
-        self.reg[0xf] = borrow as u8;
+        self.reg[0xf] = !borrow as u8;
         self.pc += 2;
     }
 
@@ -291,8 +291,11 @@ impl Chip8State {
         assert!((inst & 0xf000) >> 12 == 8);
         assert!(inst & 0x000f == 6);
         let x = ((inst & 0x0f00) >> 8) as usize;
-        self.reg[0xf] = self.reg[x] & 0x0001;
+        // So the order of operations is correct when performing operations
+        // on the 0xf register.
+        let tmp = self.reg[x] & 0x01;
         self.reg[x] >>= 1;
+        self.reg[0xf] = tmp;
         self.pc += 2;
     }
 
@@ -304,7 +307,7 @@ impl Chip8State {
         let y = ((inst & 0x00f0) >> 4) as usize;
         let (result, borrow) = self.reg[y].overflowing_sub(self.reg[x]);
         self.reg[x] = result;
-        self.reg[0xf] = borrow as u8;
+        self.reg[0xf] = !borrow as u8;
         self.pc += 2;
     }
 
@@ -313,8 +316,10 @@ impl Chip8State {
         assert!((inst & 0xf000) >> 12 == 8);
         assert!(inst & 0x000f == 0xe);
         let x = ((inst & 0x0f00) >> 8) as usize;
-        self.reg[0xf] = (self.reg[x] & 0x80) >> 7 as u8;
+        // See comment on 8XY6.
+        let tmp = (self.reg[x] & 0x80) >> 7 as u8;
         self.reg[x] <<= 1;
+        self.reg[0xf] = tmp;
         self.pc += 2;
     }
 
@@ -365,11 +370,17 @@ impl Chip8State {
         let x = self.reg[x] as usize;
         let y = self.reg[y] as usize;
         let mut carry = 0;
-        for i in 0..=n {
+        for i in 0..n {
             let byte = self.memory.read_t::<u8>(self.addr as usize +i as usize);
             for j in 0..8 {
-                let x = x + j as usize;
                 let y = y + i as usize;
+                if y >= self.screen.len() {
+                    continue;
+                }
+                let x = x + j as usize;
+                if x >= self.screen[y].len() {
+                    continue;
+                }
                 let bit = ((byte >> (7-j)) & 1) == 1;
                 let before = self.screen[y][x];
                 self.screen[y][x] ^= bit;
@@ -469,7 +480,7 @@ impl Chip8State {
         assert!(inst & 0x00ff == 0x33);
         let x = ((inst & 0x0f00) >> 8) as usize;
         let mut number = self.reg[x];
-        for i in 0..3 {
+        for i in (0..=2).rev() {
             let digit = number % 10;
             number /= 10;
             self.memory.write((self.addr+i) as usize, &digit.to_ne_bytes());

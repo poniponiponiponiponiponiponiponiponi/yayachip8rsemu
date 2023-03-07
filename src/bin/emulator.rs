@@ -42,6 +42,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut chip8_state = Chip8State::from_memory(memory);
     chip8_state.pc = 0x200;
     let mut now = SystemTime::now();
+    chip8_state.memory.memory[0x1ff] = 3;
 
     let mut cycles = 0;
     loop {
@@ -79,7 +80,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         chip8_state.execute_instruction();
         cycles += 1;
 
-        let to_sleep = time::Duration::from_millis(1);
+        let to_sleep = time::Duration::from_millis(10);
         let now = time::Instant::now();
 
         thread::sleep(to_sleep);
