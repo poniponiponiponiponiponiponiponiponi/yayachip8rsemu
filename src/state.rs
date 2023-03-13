@@ -6,6 +6,7 @@ pub struct Chip8State {
     pub pc: u16,
     // V0 to VF
     pub reg: [u8; 16],
+    pub key_pressed: [bool; 16],
     // The I address register
     pub addr: u16,
     pub stack: Stack,
@@ -20,6 +21,7 @@ impl Chip8State {
         Chip8State {
             pc: 0,
             reg: [0; 16],
+            key_pressed: [false; 16],
             addr: 0,
             stack: Stack::new(),
             memory: Memory::new(),
@@ -33,6 +35,7 @@ impl Chip8State {
         Chip8State {
             pc: 0,
             reg: [0; 16],
+            key_pressed: [false; 16],
             addr: 0,
             stack: Stack::new(),
             memory: Memory::from_vec(memory),
@@ -69,8 +72,7 @@ impl Chip8State {
         } else if inst & 0xf000 == 0x3000 {
             Chip8State::skip_eq
         } else if inst & 0xf000 == 0x4000 {
-            Chip8State::skip_neq
-        } else if inst & 0xf000 == 0x5000 && inst & 0x000f == 0 {
+            Chip8State::skip_neq } else if inst & 0xf000 == 0x5000 && inst & 0x000f == 0 {
             Chip8State::skip_regs_eq
         } else if inst & 0xf000 == 0x6000 {
             Chip8State::set_val
@@ -104,7 +106,7 @@ impl Chip8State {
             Chip8State::rand
         } else if inst & 0xf000 == 0xd000 {
             Chip8State::draw
-        } else if inst & 0xf000 == 0xe000 && inst & 0x00ff == 0xe9 {
+        } else if inst & 0xf000 == 0xe000 && inst & 0x00ff == 0x9e {
             Chip8State::skip_if_pressed
         } else if inst & 0xf000 == 0xe000 && inst & 0x00ff == 0xa1 {
             Chip8State::skip_if_not_pressed
@@ -127,7 +129,7 @@ impl Chip8State {
         } else if inst & 0xf000 == 0xf000 && inst & 0x00ff == 0x65 {
             Chip8State::reg_load
         } else {
-            panic!("bad instruction");
+            panic!("bad instruction {:04x}", inst);
         }
     }
 
@@ -395,11 +397,10 @@ impl Chip8State {
 
     // EX9E
     pub fn skip_if_pressed(&mut self, inst: u16) {
-        // TODO
         assert!((inst & 0xf000) >> 12 == 0xe);
         assert!(inst & 0x00ff == 0x9e);
         let x = ((inst & 0x0f00) >> 8) as usize;
-        if self.reg[x] == 0 {
+        if self.key_pressed[self.reg[x] as usize] {
             self.pc += 4;
         } else {
             self.pc += 2;
@@ -408,11 +409,10 @@ impl Chip8State {
 
     // EXA1
     pub fn skip_if_not_pressed(&mut self, inst: u16) {
-        // TODO
         assert!((inst & 0xf000) >> 12 == 0xe);
         assert!(inst & 0x00ff == 0xa1);
         let x = ((inst & 0x0f00) >> 8) as usize;
-        if self.reg[x] != 0 {
+        if !self.key_pressed[self.reg[x] as usize] {
             self.pc += 4;
         } else {
             self.pc += 2;
@@ -467,6 +467,7 @@ impl Chip8State {
 
     // FX29
     pub fn set_addr_to_sprite_addr(&mut self, inst: u16) {
+        println!("TODOTODOTODO");
         // TODO
         assert!((inst & 0xf000) >> 12 == 0xf);
         assert!(inst & 0x00ff == 0x29);

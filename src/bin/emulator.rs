@@ -44,11 +44,35 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut now = SystemTime::now();
     chip8_state.memory.memory[0x1ff] = 3;
 
-    let mut cycles = 0;
     loop {
+        // handle keys
+        chip8_state.key_pressed[0x1] = is_key_down(KeyCode::Key1);
+        chip8_state.key_pressed[0x2] = is_key_down(KeyCode::Key2);
+        chip8_state.key_pressed[0x3] = is_key_down(KeyCode::Key3);
+        chip8_state.key_pressed[0xc] = is_key_down(KeyCode::Key4);
+        chip8_state.key_pressed[0x4] = is_key_down(KeyCode::Q);
+        chip8_state.key_pressed[0x5] = is_key_down(KeyCode::W);
+        chip8_state.key_pressed[0x6] = is_key_down(KeyCode::E);
+        chip8_state.key_pressed[0xd] = is_key_down(KeyCode::R);
+        chip8_state.key_pressed[0x7] = is_key_down(KeyCode::A);
+        chip8_state.key_pressed[0x8] = is_key_down(KeyCode::S);
+        chip8_state.key_pressed[0x9] = is_key_down(KeyCode::D);
+        chip8_state.key_pressed[0xe] = is_key_down(KeyCode::F);
+        chip8_state.key_pressed[0xa] = is_key_down(KeyCode::Z);
+        chip8_state.key_pressed[0x0] = is_key_down(KeyCode::X);
+        chip8_state.key_pressed[0xb] = is_key_down(KeyCode::C);
+        chip8_state.key_pressed[0xf] = is_key_down(KeyCode::V);
+
+        // handle drawing
         match now.elapsed() {
             Ok(elapsed) => {
                 if elapsed.as_millis() > 1000/60 {
+                    if chip8_state.delay_timer != 0 {
+                        chip8_state.delay_timer -= 1;
+                    }
+                    if chip8_state.sound_timer != 0 {
+                        chip8_state.sound_timer -= 1;
+                    }
                     clear_background(BLUE);
                     for (y, line) in chip8_state.screen.iter().enumerate() {
                         for (x, &pixel) in line.iter().enumerate() {
@@ -72,16 +96,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 println!("Error: {e:?}");
             }
         }
-        let inst = chip8_state.memory.read(chip8_state.pc as usize, 2);
-        let bytes = [inst[0], inst[1]];
-        let word = u16::from_be_bytes(bytes);
-        let instruction = Instruction::from(word);
+        // handle emulation
+        // let inst = chip8_state.memory.read(chip8_state.pc as usize, 2);
+        // let bytes = [inst[0], inst[1]];
+        // let word = u16::from_be_bytes(bytes);
+        // let instruction = Instruction::from(word);
         //println!("{:04x}:\t{:04x} {}", chip8_state.pc, word, instruction);
         chip8_state.execute_instruction();
-        cycles += 1;
 
-        let to_sleep = time::Duration::from_millis(10);
-        let now = time::Instant::now();
+        let to_sleep = time::Duration::from_millis(1);
 
         thread::sleep(to_sleep);
     }
