@@ -42,26 +42,127 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut chip8_state = Chip8State::from_memory(memory);
     chip8_state.pc = 0x200;
     let mut now = SystemTime::now();
-    chip8_state.memory.memory[0x1ff] = 3;
 
     loop {
         // handle keys
-        chip8_state.key_pressed[0x1] = is_key_down(KeyCode::Key1);
-        chip8_state.key_pressed[0x2] = is_key_down(KeyCode::Key2);
-        chip8_state.key_pressed[0x3] = is_key_down(KeyCode::Key3);
-        chip8_state.key_pressed[0xc] = is_key_down(KeyCode::Key4);
-        chip8_state.key_pressed[0x4] = is_key_down(KeyCode::Q);
-        chip8_state.key_pressed[0x5] = is_key_down(KeyCode::W);
-        chip8_state.key_pressed[0x6] = is_key_down(KeyCode::E);
-        chip8_state.key_pressed[0xd] = is_key_down(KeyCode::R);
-        chip8_state.key_pressed[0x7] = is_key_down(KeyCode::A);
-        chip8_state.key_pressed[0x8] = is_key_down(KeyCode::S);
-        chip8_state.key_pressed[0x9] = is_key_down(KeyCode::D);
-        chip8_state.key_pressed[0xe] = is_key_down(KeyCode::F);
-        chip8_state.key_pressed[0xa] = is_key_down(KeyCode::Z);
-        chip8_state.key_pressed[0x0] = is_key_down(KeyCode::X);
-        chip8_state.key_pressed[0xb] = is_key_down(KeyCode::C);
-        chip8_state.key_pressed[0xf] = is_key_down(KeyCode::V);
+        let mut latest_press: usize = 0;
+        let mut pressed: bool = false;
+        let is_pressed = is_key_down(KeyCode::Key1);
+        if is_pressed && chip8_state.key_pressed[0x1] == false {
+            latest_press = 0x1;
+            pressed = true;
+        }
+        chip8_state.key_pressed[0x1] = is_pressed;
+
+        let is_pressed = is_key_down(KeyCode::Key2);
+        if is_pressed && chip8_state.key_pressed[0x2] == false {
+            latest_press = 0x2;
+            pressed = true;
+        }
+        chip8_state.key_pressed[0x2] = is_pressed;
+
+        let is_pressed = is_key_down(KeyCode::Key3);
+        if is_pressed && chip8_state.key_pressed[0x3] == false {
+            latest_press = 0x3;
+            pressed = true;
+        }
+        chip8_state.key_pressed[0x3] = is_pressed;
+
+        let is_pressed = is_key_down(KeyCode::Key4);
+        if is_pressed && chip8_state.key_pressed[0xc] == false {
+            latest_press = 0xc;
+            pressed = true;
+        }
+        chip8_state.key_pressed[0xc] = is_pressed;
+
+        let is_pressed = is_key_down(KeyCode::Q);
+        if is_pressed && chip8_state.key_pressed[0x4] == false {
+            latest_press = 0x4;
+            pressed = true;
+        }
+        chip8_state.key_pressed[0x4] = is_pressed;
+
+        let is_pressed = is_key_down(KeyCode::W);
+        if is_pressed && chip8_state.key_pressed[0x5] == false {
+            latest_press = 0x5;
+            pressed = true;
+        }
+        chip8_state.key_pressed[0x5] = is_pressed;
+
+        let is_pressed = is_key_down(KeyCode::E);
+        if is_pressed && chip8_state.key_pressed[0x6] == false {
+            latest_press = 0x6;
+            pressed = true;
+        }
+        chip8_state.key_pressed[0x6] = is_pressed;
+
+        let is_pressed = is_key_down(KeyCode::R);
+        if is_pressed && chip8_state.key_pressed[0xd] == false {
+            latest_press = 0xd;
+            pressed = true;
+        }
+        chip8_state.key_pressed[0xd] = is_pressed;
+
+        let is_pressed = is_key_down(KeyCode::A);
+        if is_pressed && chip8_state.key_pressed[0x7] == false {
+            latest_press = 0x7;
+            pressed = true;
+        }
+        chip8_state.key_pressed[0x7] = is_pressed;
+
+        let is_pressed = is_key_down(KeyCode::S);
+        if is_pressed && chip8_state.key_pressed[0x8] == false {
+            latest_press = 0x8;
+            pressed = true;
+        }
+        chip8_state.key_pressed[0x8] = is_pressed;
+
+        let is_pressed = is_key_down(KeyCode::D);
+        if is_pressed && chip8_state.key_pressed[0x9] == false {
+            latest_press = 0x9;
+            pressed = true;
+        }
+        chip8_state.key_pressed[0x9] = is_pressed;
+
+        let is_pressed = is_key_down(KeyCode::F);
+        if is_pressed && chip8_state.key_pressed[0xe] == false {
+            latest_press = 0xe;
+            pressed = true;
+        }
+        chip8_state.key_pressed[0xe] = is_pressed;
+
+        let is_pressed = is_key_down(KeyCode::Z);
+        if is_pressed && chip8_state.key_pressed[0xa] == false {
+            latest_press = 0xa;
+            pressed = true;
+        }
+        chip8_state.key_pressed[0xa] = is_pressed;
+
+        let is_pressed = is_key_down(KeyCode::X);
+        if is_pressed && chip8_state.key_pressed[0x0] == false {
+            latest_press = 0x0;
+            pressed = true;
+        }
+        chip8_state.key_pressed[0x0] = is_pressed;
+
+        let is_pressed = is_key_down(KeyCode::C);
+        if is_pressed && chip8_state.key_pressed[0xb] == false {
+            latest_press = 0xb;
+            pressed = true;
+        }
+        chip8_state.key_pressed[0xb] = is_pressed;
+
+        let is_pressed = is_key_down(KeyCode::V);
+        if is_pressed && chip8_state.key_pressed[0xf] == false {
+            latest_press = 0xf;
+            pressed = true;
+        }
+        chip8_state.key_pressed[0xf] = is_pressed;
+
+        if chip8_state.keypress_halt && pressed {
+            chip8_state.keypress_halt = false;
+            chip8_state.reg[chip8_state.keypress_reg as usize] = latest_press as u8;
+        }
 
         // handle drawing
         match now.elapsed() {
@@ -73,10 +174,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     if chip8_state.sound_timer != 0 {
                         chip8_state.sound_timer -= 1;
                     }
-                    clear_background(BLUE);
+                    clear_background(BLACK);
+                    let ps = args.pixel_size;
+                    let mut last_pixel = (0, 0);
                     for (y, line) in chip8_state.screen.iter().enumerate() {
                         for (x, &pixel) in line.iter().enumerate() {
-                            let ps = args.pixel_size;
+                            last_pixel = (x, y);
                             if pixel {
                                 draw_rectangle(
                                     x as f32*ps as f32,
@@ -87,6 +190,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 );
                             }
                         }
+                        draw_rectangle(
+                            last_pixel.0 as f32*ps as f32,
+                            last_pixel.1 as f32*ps as f32,
+                            ps as f32,
+                            ps as f32,
+                            GRAY
+                        );
+                    }
+                    for x in 0..=last_pixel.0 {
+                        draw_rectangle(
+                            x as f32*ps as f32,
+                            (last_pixel.1 + 1) as f32*ps as f32,
+                            ps as f32,
+                            ps as f32,
+                            GRAY
+                        );
                     }
                     next_frame().await;
                     now = SystemTime::now();
@@ -102,9 +221,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         // let word = u16::from_be_bytes(bytes);
         // let instruction = Instruction::from(word);
         //println!("{:04x}:\t{:04x} {}", chip8_state.pc, word, instruction);
-        chip8_state.execute_instruction();
+        if !chip8_state.keypress_halt {
+            chip8_state.execute_instruction();
+        }
 
-        let to_sleep = time::Duration::from_millis(1);
+        let to_sleep = time::Duration::from_millis(4);
 
         thread::sleep(to_sleep);
     }

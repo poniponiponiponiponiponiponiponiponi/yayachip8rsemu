@@ -14,6 +14,8 @@ pub struct Chip8State {
     pub delay_timer: u8,
     pub sound_timer: u8,
     pub screen: [[bool; 64]; 32],
+    pub keypress_halt: bool,
+    pub keypress_reg: u8,
 }
 
 impl Chip8State {
@@ -28,6 +30,8 @@ impl Chip8State {
             delay_timer: 0,
             sound_timer: 0,
             screen: [[false; 64]; 32],
+            keypress_halt: false,
+            keypress_reg: 0,
         }
     }
 
@@ -42,6 +46,8 @@ impl Chip8State {
             delay_timer: 0,
             sound_timer: 0,
             screen: [[false; 64]; 32],
+            keypress_halt: false,
+            keypress_reg: 0,
         }
     }
 
@@ -375,14 +381,8 @@ impl Chip8State {
         for i in 0..n {
             let byte = self.memory.read_t::<u8>(self.addr as usize +i as usize);
             for j in 0..8 {
-                let y = y + i as usize;
-                if y >= self.screen.len() {
-                    continue;
-                }
-                let x = x + j as usize;
-                if x >= self.screen[y].len() {
-                    continue;
-                }
+                let y = (y + i as usize) % self.screen.len();
+                let x = (x + j as usize) % self.screen[y].len();
                 let bit = ((byte >> (7-j)) & 1) == 1;
                 let before = self.screen[y][x];
                 self.screen[y][x] ^= bit;
@@ -430,11 +430,11 @@ impl Chip8State {
 
     // FX0A
     pub fn get_keypress(&mut self, inst: u16) {
-        // TODO
         assert!((inst & 0xf000) >> 12 == 0xf);
         assert!(inst & 0x00ff == 0x0a);
         let x = ((inst & 0x0f00) >> 8) as usize;
-        self.reg[x] = 0;
+        self.keypress_halt = true;
+        self.keypress_reg = x as u8;
         self.pc += 2;
     }
 
