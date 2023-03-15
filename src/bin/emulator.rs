@@ -77,7 +77,7 @@ fn print_ui_text(ui: &mut Ui, str: String) {
     }
 }
 
-async fn draw_screen(chip8_state: &mut Chip8State, ps: usize) {
+fn draw_screen(chip8_state: &mut Chip8State, ps: usize) {
     clear_background(BLACK);
     let mut last_pixel = (0, 0);
     for (y, line) in chip8_state.screen.iter().enumerate() {
@@ -110,8 +110,10 @@ async fn draw_screen(chip8_state: &mut Chip8State, ps: usize) {
             GRAY
         );
     }
-    let mut data0: String = "".to_string();
+}
 
+fn draw_debug_windows(chip8_state: &mut Chip8State) {
+    let mut data0: String = "".to_string();
     widgets::Window::new(hash!(), vec2(470., 50.), vec2(300., 300.))
         .label("Debug")
         .ui(&mut *root_ui(), |ui| {
@@ -148,8 +150,6 @@ async fn draw_screen(chip8_state: &mut Chip8State, ps: usize) {
         .ui(&mut *root_ui(), |ui| {
             print_ui_text(ui, "AAAAAAAAAAAAAAAA\nBBBBBBBBBBBBBB".to_string());
         });
-
-    next_frame().await;
 }
 
 #[macroquad::main("yayachip8rsemu")]
@@ -176,7 +176,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     if chip8_state.sound_timer != 0 {
                         chip8_state.sound_timer -= 1;
                     }
-                    draw_screen(&mut chip8_state, args.pixel_size as usize).await;
+
+                    // drawing
+                    draw_screen(&mut chip8_state, args.pixel_size as usize);
+                    if args.debug_mode {
+                        draw_debug_windows(&mut chip8_state);
+                    }
+                    next_frame().await;
+
                     now = SystemTime::now();
                 }
             }
