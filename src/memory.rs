@@ -7,6 +7,12 @@ pub struct Memory {
     pub memory: [u8; 4096],
 }
 
+impl Default for Memory {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Memory {
     pub fn new() -> Memory {
         Memory {

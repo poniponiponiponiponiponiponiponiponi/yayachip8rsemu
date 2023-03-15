@@ -2,6 +2,18 @@ use crate::stack::Stack;
 use crate::memory::Memory;
 use rand::Rng;
 
+pub struct Breakpoint {
+    addr: usize,
+}
+
+impl Breakpoint {
+    fn new(addr: usize) -> Breakpoint {
+        Breakpoint {
+            addr
+        }
+    }
+}
+
 pub struct Chip8State {
     pub pc: u16,
     // V0 to VF
@@ -16,6 +28,14 @@ pub struct Chip8State {
     pub screen: [[bool; 64]; 32],
     pub keypress_halt: bool,
     pub keypress_reg: u8,
+    pub stop: bool,
+    pub breakpoints: Vec<Breakpoint>,
+}
+
+impl Default for Chip8State {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Chip8State {
@@ -32,6 +52,8 @@ impl Chip8State {
             screen: [[false; 64]; 32],
             keypress_halt: false,
             keypress_reg: 0,
+            stop: false,
+            breakpoints: Vec::new(),
         }
     }
 
@@ -48,12 +70,14 @@ impl Chip8State {
             screen: [[false; 64]; 32],
             keypress_halt: false,
             keypress_reg: 0,
+            stop: false,
+            breakpoints: Vec::new(),
         }
     }
 
     pub fn load_memory(&mut self, to_load: Vec<u8>, offset: usize) {
         for (i, &byte) in to_load.iter().enumerate() {
-            self.memory.memory[i] = byte;
+            self.memory.memory[i+offset] = byte;
         }
     }
 
@@ -78,31 +102,32 @@ impl Chip8State {
         } else if inst & 0xf000 == 0x3000 {
             Chip8State::skip_eq
         } else if inst & 0xf000 == 0x4000 {
-            Chip8State::skip_neq } else if inst & 0xf000 == 0x5000 && inst & 0x000f == 0 {
+            Chip8State::skip_neq
+        } else if inst & 0xf000 == 0x5000 && inst & 0x000f == 0x0 {
             Chip8State::skip_regs_eq
         } else if inst & 0xf000 == 0x6000 {
             Chip8State::set_val
         } else if inst & 0xf000 == 0x7000 {
             Chip8State::add_val
-        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0 {
+        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x0 {
             Chip8State::set_reg
-        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 1 {
+        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x1 {
             Chip8State::or_reg
-        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 2 {
+        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x2 {
             Chip8State::and_reg
-        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 3 {
+        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x3 {
             Chip8State::xor_reg
-        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 4 {
+        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x4 {
             Chip8State::add_reg
-        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 5 {
+        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x5 {
             Chip8State::sub_reg
-        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 6 {
+        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x6 {
             Chip8State::rsh_reg
-        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 7 {
+        } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x7 {
             Chip8State::reverse_sub_reg
         } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0xe {
             Chip8State::lsh_reg
-        } else if inst & 0xf000 == 0x9000 && inst & 0x000f == 0 {
+        } else if inst & 0xf000 == 0x9000 && inst & 0x000f == 0x0 {
             Chip8State::skip_regs_neq
         } else if inst & 0xf000 == 0xa000 {
             Chip8State::set_addr
@@ -142,7 +167,6 @@ impl Chip8State {
     // 0NNN
     pub fn call_rca1802_code_routine(&mut self, inst: u16) {
         assert!((inst & 0xf000) >> 12 == 0);
-        // not necessary for most roms so gonna skip it
         self.pc += 2;
     }
 
@@ -325,7 +349,7 @@ impl Chip8State {
         assert!(inst & 0x000f == 0xe);
         let x = ((inst & 0x0f00) >> 8) as usize;
         // See comment on 8XY6.
-        let tmp = (self.reg[x] & 0x80) >> 7 as u8;
+        let tmp = (self.reg[x] & 0x80) >> 7;
         self.reg[x] <<= 1;
         self.reg[0xf] = tmp;
         self.pc += 2;
@@ -347,7 +371,7 @@ impl Chip8State {
     // ANNN
     pub fn set_addr(&mut self, inst: u16) {
         assert!((inst & 0xf000) >> 12 == 0xa);
-        self.addr = (inst & 0x0fff) as u16;
+        self.addr = inst & 0x0fff;
         self.pc += 2;
     }
 
@@ -422,7 +446,7 @@ impl Chip8State {
     // FX07
     pub fn get_delay_timer(&mut self, inst: u16) {
         assert!((inst & 0xf000) >> 12 == 0xf);
-        assert!(inst & 0x00ff == 07);
+        assert!(inst & 0x00ff == 7);
         let x = ((inst & 0x0f00) >> 8) as usize;
         self.reg[x] = self.delay_timer;
         self.pc += 2;
@@ -471,7 +495,7 @@ impl Chip8State {
         // TODO
         assert!((inst & 0xf000) >> 12 == 0xf);
         assert!(inst & 0x00ff == 0x29);
-        let x = ((inst & 0x0f00) >> 8) as usize;
+        let _x = ((inst & 0x0f00) >> 8) as usize;
         self.pc += 2;
     }
 

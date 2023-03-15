@@ -3,6 +3,12 @@ pub struct Stack {
     stack: [u16; 16],
 }
 
+impl Default for Stack {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Stack {
     pub fn new() -> Stack {
         Stack {

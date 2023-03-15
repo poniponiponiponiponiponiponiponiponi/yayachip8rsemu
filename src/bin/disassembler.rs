@@ -2,7 +2,6 @@ use clap::Parser;
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
-use libc;
 use yayachip8rsemu::disasm;
 
 #[derive(Parser, Debug)]

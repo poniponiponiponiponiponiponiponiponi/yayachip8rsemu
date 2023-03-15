@@ -406,7 +406,7 @@ fn skip_regs_neq(inst: u16) -> Instruction {
 // ANNN
 fn set_addr(inst: u16) -> Instruction {
     assert!((inst & 0xf000) >> 12 == 0xa);
-    let nnn = (inst & 0x0fff) as u16;
+    let nnn = inst & 0x0fff;
     Instruction {
         instruction_type: InstructionType::SetAddr,
         args: format!("I {:04x}", nnn),
@@ -471,7 +471,7 @@ fn skip_if_not_pressed(inst: u16) -> Instruction {
 // FX07
 fn get_delay_timer(inst: u16) -> Instruction {
     assert!((inst & 0xf000) >> 12 == 0xf);
-    assert!(inst & 0x00ff == 07);
+    assert!(inst & 0x00ff == 7);
     let x = ((inst & 0x0f00) >> 8) as usize;
     Instruction {
         instruction_type: InstructionType::GetDelayTimer,
@@ -572,6 +572,6 @@ fn reg_load(inst: u16) -> Instruction {
 fn bad_instruction(_inst: u16) -> Instruction {
     Instruction {
         instruction_type: InstructionType::BadInstruction,
-        args: format!(""),
+        args: String::new(),
     }
 }

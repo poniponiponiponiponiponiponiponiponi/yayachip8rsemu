@@ -1,5 +1,5 @@
 use clap::Parser;
-use yayachip8rsemu::disasm::Instruction;
+// use yayachip8rsemu::disasm::Instruction;
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
@@ -58,7 +58,7 @@ fn handle_input(chip8_state: &mut Chip8State) {
     ];
     for (keyboard_key, chip8_key) in keyboard_key_chip8_key_pairs {
         let is_pressed = is_key_down(keyboard_key);
-        if is_pressed && chip8_state.key_pressed[chip8_key] == false {
+        if is_pressed && !chip8_state.key_pressed[chip8_key] {
             latest_press = chip8_key;
             pressed = true;
         }
@@ -116,7 +116,7 @@ fn draw_debug_windows(chip8_state: &mut Chip8State) {
     let mut data0: String = "".to_string();
     widgets::Window::new(hash!(), vec2(470., 50.), vec2(300., 300.))
         .label("Debug")
-        .ui(&mut *root_ui(), |ui| {
+        .ui(&mut root_ui(), |ui| {
             ui.label(None, "Some random text");
             if ui.button(None, "Stop") {
             }
@@ -142,12 +142,12 @@ fn draw_debug_windows(chip8_state: &mut Chip8State) {
         });
     widgets::Window::new(hash!(), vec2(470., 50.), vec2(300., 300.))
         .label("State")
-        .ui(&mut *root_ui(), |ui| {
+        .ui(&mut root_ui(), |ui| {
             print_ui_text(ui, "AAAAAAAAAAAAAAAA\nBBBBBBBBBBBBBB".to_string());
         });
     widgets::Window::new(hash!(), vec2(470., 50.), vec2(300., 300.))
         .label("Disassembly")
-        .ui(&mut *root_ui(), |ui| {
+        .ui(&mut root_ui(), |ui| {
             print_ui_text(ui, "AAAAAAAAAAAAAAAA\nBBBBBBBBBBBBBB".to_string());
         });
 }
