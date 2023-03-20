@@ -42,6 +42,10 @@ impl Memory {
         ret
     }
 
+    pub fn len(&self) -> usize {
+        self.memory.len()
+    }
+
     pub fn read_t<T: Default + Shl<usize, Output = T> + BitOr<u8, Output = T> + Display>
         (&self, beg: usize) -> T {
         let size = size_of::<T>();

@@ -112,8 +112,7 @@ fn draw_screen(chip8_state: &mut Chip8State, ps: usize) {
     }
 }
 
-fn draw_debug_windows(chip8_state: &mut Chip8State) {
-    let mut steps: String = "".to_string();
+fn debug_windows(chip8_state: &mut Chip8State, steps: &mut String, breakpoint_addr: &mut String) {
     widgets::Window::new(hash!(), vec2(0., 50.), vec2(200., 300.))
         .label("Debug")
         .ui(&mut root_ui(), |ui| {
@@ -143,11 +142,12 @@ fn draw_debug_windows(chip8_state: &mut Chip8State) {
                 }
                 ui.separator();
                 ui.label(None, "Make X amount of steps: ");
-                ui.input_text(hash!(), "< --", &mut steps);
+                ui.input_text(hash!(), "< --", steps);
                 ui.separator();
                 if ui.button(None, "Step X") {
                     let steps = steps.parse::<u16>();
                     if let Ok(steps) = steps {
+                        chip8_state.stop = false;
                         chip8_state.steps_to_stop += steps;
                     } else {
                         eprintln!("steps is not a number");
@@ -158,7 +158,7 @@ fn draw_debug_windows(chip8_state: &mut Chip8State) {
             ui.separator();
             ui.tree_node(hash!(), "Breakpoints", |ui| {
                 ui.label(None, "Breakpoint address: ");
-                ui.input_text(hash!(), "< --", &mut steps);
+                ui.input_text(hash!(), "< --", breakpoint_addr);
                 ui.separator();
                 if ui.button(None, "Add breakpoint") {
                 }
@@ -197,6 +197,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     chip8_state.pc = 0x200;
     let mut now = SystemTime::now();
 
+    let mut steps = String::new();
+    let mut breakpoint_addr = String::new();
+
     loop {
         handle_input(&mut chip8_state);
         match now.elapsed() {
@@ -212,7 +215,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     // drawing
                     draw_screen(&mut chip8_state, args.pixel_size as usize);
                     if args.debug_mode {
-                        draw_debug_windows(&mut chip8_state);
+                        debug_windows(&mut chip8_state, &mut steps, &mut breakpoint_addr);
                     }
                     next_frame().await;
 

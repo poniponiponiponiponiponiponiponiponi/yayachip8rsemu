@@ -80,7 +80,7 @@ impl Chip8State {
             if inst_addr < 0 {
                 disasm_str += "\n";
                 continue;
-            } else if inst_addr as usize >= self.memory.memory.len() - 1 {
+            } else if inst_addr as usize >= self.memory.len() - 1 {
                 disasm_str += "\n";
                 continue;
             }
