@@ -99,7 +99,7 @@ fn draw_screen(chip8_state: &mut Chip8State, ps: usize) {
             ps as f32,
             ps as f32,
             GRAY
-        );
+            );
     }
     for x in 0..=last_pixel.0 {
         draw_rectangle(
@@ -113,42 +113,74 @@ fn draw_screen(chip8_state: &mut Chip8State, ps: usize) {
 }
 
 fn draw_debug_windows(chip8_state: &mut Chip8State) {
-    let mut data0: String = "".to_string();
-    widgets::Window::new(hash!(), vec2(470., 50.), vec2(300., 300.))
+    let mut steps: String = "".to_string();
+    widgets::Window::new(hash!(), vec2(0., 50.), vec2(200., 300.))
         .label("Debug")
         .ui(&mut root_ui(), |ui| {
-            ui.label(None, "Some random text");
             if ui.button(None, "Stop") {
+                chip8_state.stop = true;
             }
             ui.same_line(0.0);
             if ui.button(None, "Start") {
+                chip8_state.stop = false;
             }
 
             ui.separator();
-            if ui.button(None, "Step 1") {
-            }
-            ui.same_line(0.0);
-            if ui.button(None, "Step 10") {
-            }
-            ui.same_line(0.0);
-            if ui.button(None, "Step 100") {
-            }
+            ui.tree_node(hash!(), "Step", |ui| {
+                if ui.button(None, "Step 1") {
+                    chip8_state.stop = false;
+                    chip8_state.steps_to_stop += 1;
+                }
+                ui.same_line(0.0);
+                if ui.button(None, "Step 10") {
+                    chip8_state.stop = false;
+                    chip8_state.steps_to_stop += 10;
+                }
+                ui.same_line(0.0);
+                if ui.button(None, "Step 100") {
+                    chip8_state.stop = false;
+                    chip8_state.steps_to_stop += 100;
+                }
+                ui.separator();
+                ui.label(None, "Make X amount of steps: ");
+                ui.input_text(hash!(), "< --", &mut steps);
+                ui.separator();
+                if ui.button(None, "Step X") {
+                    let steps = steps.parse::<u16>();
+                    if let Ok(steps) = steps {
+                        chip8_state.steps_to_stop += steps;
+                    } else {
+                        eprintln!("steps is not a number");
+                    }
+                }
+            });
+
             ui.separator();
-            ui.label(None, "Make X amount of steps: ");
-            ui.input_text(hash!(), "< --", &mut data0);
+            ui.tree_node(hash!(), "Breakpoints", |ui| {
+                ui.label(None, "Breakpoint address: ");
+                ui.input_text(hash!(), "< --", &mut steps);
+                ui.separator();
+                if ui.button(None, "Add breakpoint") {
+                }
+                ui.separator();
+                ui.label(None, "Breakpoints: ");
+            });
+
             ui.separator();
-            if ui.button(None, "Step X") {
-            }
+            ui.tree_node(hash!(), "Speedhacks", |ui| {
+            });
         });
-    widgets::Window::new(hash!(), vec2(470., 50.), vec2(300., 300.))
+
+    widgets::Window::new(hash!(), vec2(300., 50.), vec2(250., 300.))
         .label("State")
         .ui(&mut root_ui(), |ui| {
-            print_ui_text(ui, "AAAAAAAAAAAAAAAA\nBBBBBBBBBBBBBB".to_string());
+            print_ui_text(ui, chip8_state.get_state_string());
         });
-    widgets::Window::new(hash!(), vec2(470., 50.), vec2(300., 300.))
+
+    widgets::Window::new(hash!(), vec2(600., 50.), vec2(300., 300.))
         .label("Disassembly")
         .ui(&mut root_ui(), |ui| {
-            print_ui_text(ui, "AAAAAAAAAAAAAAAA\nBBBBBBBBBBBBBB".to_string());
+            print_ui_text(ui, chip8_state.get_disassembly_string());
         });
 }
 
@@ -192,13 +224,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
         }
         // handle emulation
-        // let inst = chip8_state.memory.read(chip8_state.pc as usize, 2);
-        // let bytes = [inst[0], inst[1]];
-        // let word = u16::from_be_bytes(bytes);
-        // let instruction = Instruction::from(word);
-        //println!("{:04x}:\t{:04x} {}", chip8_state.pc, word, instruction);
-        if !chip8_state.keypress_halt {
+        if !chip8_state.keypress_halt && !chip8_state.stop {
             chip8_state.execute_instruction();
+            if chip8_state.steps_to_stop > 0 {
+                chip8_state.steps_to_stop -= 1;
+                if chip8_state.steps_to_stop == 0 {
+                    chip8_state.stop = true;
+                }
+            }
         }
 
         let to_sleep = time::Duration::from_millis(2);

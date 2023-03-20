@@ -1,3 +1,4 @@
+use crate::disasm::Instruction;
 use crate::stack::Stack;
 use crate::memory::Memory;
 use rand::Rng;
@@ -29,6 +30,7 @@ pub struct Chip8State {
     pub keypress_halt: bool,
     pub keypress_reg: u8,
     pub stop: bool,
+    pub steps_to_stop: u16,
     pub breakpoints: Vec<Breakpoint>,
 }
 
@@ -53,8 +55,45 @@ impl Chip8State {
             keypress_halt: false,
             keypress_reg: 0,
             stop: false,
+            steps_to_stop: 0,
             breakpoints: Vec::new(),
         }
+    }
+
+    pub fn get_state_string(&self) -> String {
+        let mut state_str = String::new();
+        state_str += &format!("pc: {0:}\n", self.pc);
+        for (i, val) in self.reg.iter().enumerate() {
+            state_str += &format!("V{0:x}: {1:3} {1:#04x}", i, val);
+            state_str += if i % 2 == 0 { "  |  " } else { "\n" };
+        }
+        state_str += &format!("I: {0:#06x}\n", self.addr);
+        state_str += &format!("delay_timer: {:3}\n", self.delay_timer);
+        state_str += &format!("sound_timer: {:3}\n", self.sound_timer);
+        state_str
+    }
+
+    pub fn get_disassembly_string(&self) -> String {
+        let mut disasm_str = String::new();
+        for i in (-6..=18).step_by(2) {
+            let inst_addr = self.pc as i32 + i;
+            if inst_addr < 0 {
+                disasm_str += "\n";
+                continue;
+            } else if inst_addr as usize >= self.memory.memory.len() - 1 {
+                disasm_str += "\n";
+                continue;
+            }
+            let inst = self.memory.read(inst_addr as usize, 2);
+            let bytes = [inst[0], inst[1]];
+            let word = u16::from_be_bytes(bytes);
+            let instruction = Instruction::from(word);
+            if i == 0 {
+                disasm_str += "--->  ";
+            }
+            disasm_str += &format!("{:04x}:\t{:04x} {}\n", inst_addr, word, instruction);
+        }
+        disasm_str
     }
 
     pub fn from_memory(memory: Vec<u8>) -> Chip8State {
@@ -71,6 +110,7 @@ impl Chip8State {
             keypress_halt: false,
             keypress_reg: 0,
             stop: false,
+            steps_to_stop: 0,
             breakpoints: Vec::new(),
         }
     }
