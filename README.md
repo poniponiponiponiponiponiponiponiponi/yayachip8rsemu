@@ -8,7 +8,6 @@ debugging, etc.
 TODO:
 - make a better README.md
 - add sound
-- add breakpoints
 - add speedhacks
 - make the ui prettier
 - add more tests

@@ -3,7 +3,7 @@ use clap::Parser;
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
-use yayachip8rsemu::state::Chip8State;
+use yayachip8rsemu::state::{Chip8State, Breakpoint};
 use macroquad::prelude::*;
 use macroquad::ui::{hash, root_ui, widgets, Ui};
 use std::time::SystemTime;
@@ -99,7 +99,7 @@ fn draw_screen(chip8_state: &mut Chip8State, ps: usize) {
             ps as f32,
             ps as f32,
             GRAY
-            );
+        );
     }
     for x in 0..=last_pixel.0 {
         draw_rectangle(
@@ -161,9 +161,35 @@ fn debug_windows(chip8_state: &mut Chip8State, steps: &mut String, breakpoint_ad
                 ui.input_text(hash!(), "< --", breakpoint_addr);
                 ui.separator();
                 if ui.button(None, "Add breakpoint") {
+                    let breakpoint_addr = breakpoint_addr.parse::<u16>();
+                    if let Ok(breakpoint_addr) = breakpoint_addr {
+                        let bp = Breakpoint::new(breakpoint_addr);
+                        chip8_state.breakpoints.push(bp);
+                    } else {
+                        eprintln!("breakpoint address is not an address");
+                    }
                 }
                 ui.separator();
                 ui.label(None, "Breakpoints: ");
+
+                let mut to_remove = Vec::new();
+                for (i, bp) in chip8_state.breakpoints.iter().enumerate() {
+                    ui.label(None, &format!("{i:2}: {:#06x}", bp.addr));
+                    ui.same_line(0.0);
+                    if ui.button(None, "Remove") {
+                        let idx = chip8_state.breakpoints
+                            .iter()
+                            .position(|x| x == bp)
+                            .unwrap();
+                        to_remove.push(idx);
+                    }
+                    ui.separator();
+                }
+                to_remove.sort();
+                to_remove.reverse();
+                for idx in to_remove {
+                    chip8_state.breakpoints.remove(idx);
+                }
             });
 
             ui.separator();
@@ -229,12 +255,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
         // handle emulation
         if !chip8_state.keypress_halt && !chip8_state.stop {
             chip8_state.execute_instruction();
+
             if chip8_state.steps_to_stop > 0 {
                 chip8_state.steps_to_stop -= 1;
                 if chip8_state.steps_to_stop == 0 {
                     chip8_state.stop = true;
                 }
             }
+
+            chip8_state.check_for_breakpoints();
         }
 
         let to_sleep = time::Duration::from_millis(2);

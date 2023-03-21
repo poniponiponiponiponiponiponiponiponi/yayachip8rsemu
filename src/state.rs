@@ -1,17 +1,24 @@
+use std::cmp;
 use crate::disasm::Instruction;
 use crate::stack::Stack;
 use crate::memory::Memory;
 use rand::Rng;
 
 pub struct Breakpoint {
-    addr: usize,
+    pub addr: u16,
 }
 
 impl Breakpoint {
-    fn new(addr: usize) -> Breakpoint {
+    pub fn new(addr: u16) -> Breakpoint {
         Breakpoint {
             addr
         }
+    }
+}
+
+impl cmp::PartialEq for Breakpoint {
+    fn eq(&self, other: &Self) -> bool {
+        return self.addr == other.addr;
     }
 }
 
@@ -57,6 +64,16 @@ impl Chip8State {
             stop: false,
             steps_to_stop: 0,
             breakpoints: Vec::new(),
+        }
+    }
+
+    pub fn check_for_breakpoints(&mut self) {
+        for bp in self.breakpoints.iter() {
+            if bp.addr == self.pc {
+                self.stop = true;
+                self.steps_to_stop = 0;
+                break;
+            }
         }
     }
 
