@@ -20,7 +20,11 @@ struct Args {
 
     /// Where to load the binary image.
     #[arg(short, long, action, default_value_t = 0x200)]
-    offset: usize,
+    offset: u16,
+
+    /// Execution start address.
+    #[arg(long, action, default_value_t = 0x200)]
+    start: u16,
 
     /// Chip8 pixel size.
     #[arg(short, long, action, default_value_t = 16)]
@@ -262,7 +266,7 @@ fn create_chip8_from_args(args: &Args) -> Result<Chip8State, Box<dyn Error>> {
     file.read_to_end(&mut contents)?;
     memory.append(&mut contents);
     let mut chip8_state = Chip8State::from_memory(memory);
-    chip8_state.pc = 0x200;
+    chip8_state.pc = args.start;
     Ok(chip8_state)
 }
 
