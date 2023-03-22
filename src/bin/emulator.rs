@@ -113,7 +113,11 @@ fn draw_screen(chip8_state: &mut Chip8State, ps: usize) {
     }
 }
 
-fn debug_windows(chip8_state: &mut Chip8State, steps: &mut String, breakpoint_addr: &mut String) {
+fn debug_windows(
+        chip8_state: &mut Chip8State,
+        steps: &mut String,
+        breakpoint_addr: &mut String,
+        args: &Args) {
     widgets::Window::new(hash!(), vec2(0., 50.), vec2(200., 300.))
         .label("Debug")
         .ui(&mut root_ui(), |ui| {
@@ -123,6 +127,10 @@ fn debug_windows(chip8_state: &mut Chip8State, steps: &mut String, breakpoint_ad
             ui.same_line(0.0);
             if ui.button(None, "Continue") {
                 chip8_state.continue_execution();
+            }
+            ui.same_line(0.0);
+            if ui.button(None, "Restart") {
+                *chip8_state = create_chip8_from_args(args).unwrap();
             }
 
             ui.separator();
@@ -227,7 +235,7 @@ async fn main_loop(chip8_state: &mut Chip8State, args: &Args) {
                     // drawing
                     draw_screen(chip8_state, args.pixel_size as usize);
                     if args.debug_mode {
-                        debug_windows(chip8_state, &mut steps, &mut breakpoint_addr);
+                        debug_windows(chip8_state, &mut steps, &mut breakpoint_addr, args);
                     }
                     next_frame().await;
 
@@ -247,10 +255,7 @@ async fn main_loop(chip8_state: &mut Chip8State, args: &Args) {
     }
 }
 
-#[macroquad::main("yayachip8rsemu")]
-async fn main() -> Result<(), Box<dyn Error>> {
-    let args = Args::parse();
-
+fn create_chip8_from_args(args: &Args) -> Result<Chip8State, Box<dyn Error>> {
     let mut file = File::open(&args.file)?;
     let mut memory = vec![0u8; 0x200];
     let mut contents = Vec::<u8>::new();
@@ -258,6 +263,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
     memory.append(&mut contents);
     let mut chip8_state = Chip8State::from_memory(memory);
     chip8_state.pc = 0x200;
+    Ok(chip8_state)
+}
+
+#[macroquad::main("yayachip8rsemu")]
+async fn main() -> Result<(), Box<dyn Error>> {
+    let args = Args::parse();
+    let mut chip8_state = create_chip8_from_args(&args)?;
 
     main_loop(&mut chip8_state, &args).await;
 
