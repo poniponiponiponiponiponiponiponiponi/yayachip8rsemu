@@ -3,7 +3,7 @@ use clap::Parser;
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
-use yayachip8rsemu::state::{Chip8State, Breakpoint};
+use yayachip8rsemu::state::Chip8State;
 use macroquad::prelude::*;
 use macroquad::ui::{hash, root_ui, widgets, Ui};
 use std::time::SystemTime;
