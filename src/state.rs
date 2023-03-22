@@ -67,6 +67,40 @@ impl Chip8State {
         }
     }
 
+    pub fn from_memory(memory: Vec<u8>) -> Chip8State {
+        Chip8State {
+            pc: 0,
+            reg: [0; 16],
+            key_pressed: [false; 16],
+            addr: 0,
+            stack: Stack::new(),
+            memory: Memory::from_vec(memory),
+            delay_timer: 0,
+            sound_timer: 0,
+            screen: [[false; 64]; 32],
+            keypress_halt: false,
+            keypress_reg: 0,
+            stop: false,
+            steps_to_stop: 0,
+            breakpoints: Vec::new(),
+        }
+    }
+
+    pub fn step(&mut self, steps: u16) {
+        self.stop = false;
+        self.steps_to_stop += steps;
+    }
+
+    pub fn stop_execution(&mut self) {
+        self.stop = true;
+        self.steps_to_stop = 0;
+    }
+
+    pub fn continue_execution(&mut self) {
+        self.stop = false;
+        self.steps_to_stop = 0;
+    }
+
     pub fn check_for_breakpoints(&mut self) {
         for bp in self.breakpoints.iter() {
             if bp.addr == self.pc {
@@ -113,28 +147,29 @@ impl Chip8State {
         disasm_str
     }
 
-    pub fn from_memory(memory: Vec<u8>) -> Chip8State {
-        Chip8State {
-            pc: 0,
-            reg: [0; 16],
-            key_pressed: [false; 16],
-            addr: 0,
-            stack: Stack::new(),
-            memory: Memory::from_vec(memory),
-            delay_timer: 0,
-            sound_timer: 0,
-            screen: [[false; 64]; 32],
-            keypress_halt: false,
-            keypress_reg: 0,
-            stop: false,
-            steps_to_stop: 0,
-            breakpoints: Vec::new(),
-        }
-    }
-
     pub fn load_memory(&mut self, to_load: Vec<u8>, offset: usize) {
         for (i, &byte) in to_load.iter().enumerate() {
             self.memory.memory[i+offset] = byte;
+        }
+    }
+
+    pub fn add_breakpoint(&mut self, breakpoint_addr: u16) {
+        let bp = Breakpoint::new(breakpoint_addr);
+        self.breakpoints.push(bp);
+    }
+
+    pub fn emulate_instruction(&mut self) {
+        if !self.keypress_halt && !self.stop {
+            self.execute_instruction();
+
+            if self.steps_to_stop > 0 {
+                self.steps_to_stop -= 1;
+                if self.steps_to_stop == 0 {
+                    self.stop = true;
+                }
+            }
+
+            self.check_for_breakpoints();
         }
     }
 

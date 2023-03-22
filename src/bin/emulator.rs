@@ -36,8 +36,6 @@ struct Args {
 }
 
 fn handle_input(chip8_state: &mut Chip8State) {
-    let mut latest_press: usize = 0;
-    let mut pressed: bool = false;
     let keyboard_key_chip8_key_pairs = [
         (KeyCode::Key1, 0x1),
         (KeyCode::Key2, 0x2),
@@ -56,6 +54,9 @@ fn handle_input(chip8_state: &mut Chip8State) {
         (KeyCode::C, 0xb),
         (KeyCode::V, 0xf),
     ];
+    let mut latest_press: usize = 0;
+    let mut pressed: bool = false;
+
     for (keyboard_key, chip8_key) in keyboard_key_chip8_key_pairs {
         let is_pressed = is_key_down(keyboard_key);
         if is_pressed && !chip8_state.key_pressed[chip8_key] {
@@ -117,28 +118,25 @@ fn debug_windows(chip8_state: &mut Chip8State, steps: &mut String, breakpoint_ad
         .label("Debug")
         .ui(&mut root_ui(), |ui| {
             if ui.button(None, "Stop") {
-                chip8_state.stop = true;
+                chip8_state.stop_execution();
             }
             ui.same_line(0.0);
             if ui.button(None, "Continue") {
-                chip8_state.stop = false;
+                chip8_state.continue_execution();
             }
 
             ui.separator();
             ui.tree_node(hash!(), "Step", |ui| {
                 if ui.button(None, "Step 1") {
-                    chip8_state.stop = false;
-                    chip8_state.steps_to_stop += 1;
+                    chip8_state.step(1);
                 }
                 ui.same_line(0.0);
                 if ui.button(None, "Step 10") {
-                    chip8_state.stop = false;
-                    chip8_state.steps_to_stop += 10;
+                    chip8_state.step(10);
                 }
                 ui.same_line(0.0);
                 if ui.button(None, "Step 100") {
-                    chip8_state.stop = false;
-                    chip8_state.steps_to_stop += 100;
+                    chip8_state.step(100);
                 }
                 ui.separator();
                 ui.label(None, "Make X amount of steps: ");
@@ -147,8 +145,7 @@ fn debug_windows(chip8_state: &mut Chip8State, steps: &mut String, breakpoint_ad
                 if ui.button(None, "Step X") {
                     let steps = steps.parse::<u16>();
                     if let Ok(steps) = steps {
-                        chip8_state.stop = false;
-                        chip8_state.steps_to_stop += steps;
+                        chip8_state.step(steps);
                     } else {
                         eprintln!("steps is not a number");
                     }
@@ -163,8 +160,7 @@ fn debug_windows(chip8_state: &mut Chip8State, steps: &mut String, breakpoint_ad
                 if ui.button(None, "Add breakpoint") {
                     let breakpoint_addr = breakpoint_addr.parse::<u16>();
                     if let Ok(breakpoint_addr) = breakpoint_addr {
-                        let bp = Breakpoint::new(breakpoint_addr);
-                        chip8_state.breakpoints.push(bp);
+                        chip8_state.add_breakpoint(breakpoint_addr);
                     } else {
                         eprintln!("breakpoint address is not an address");
                     }
@@ -210,24 +206,14 @@ fn debug_windows(chip8_state: &mut Chip8State, steps: &mut String, breakpoint_ad
         });
 }
 
-#[macroquad::main("yayachip8rsemu")]
-async fn main() -> Result<(), Box<dyn Error>> {
-    let args = Args::parse();
-
-    let mut file = File::open(args.file)?;
-    let mut memory = vec![0u8; 0x200];
-    let mut contents = Vec::<u8>::new();
-    file.read_to_end(&mut contents)?;
-    memory.append(&mut contents);
-    let mut chip8_state = Chip8State::from_memory(memory);
-    chip8_state.pc = 0x200;
+async fn main_loop(chip8_state: &mut Chip8State, args: &Args) {
     let mut now = SystemTime::now();
 
+    // input values for the interface
     let mut steps = String::new();
     let mut breakpoint_addr = String::new();
-
     loop {
-        handle_input(&mut chip8_state);
+        handle_input(chip8_state);
         match now.elapsed() {
             Ok(elapsed) => {
                 if elapsed.as_millis() > 1000/60 {
@@ -239,9 +225,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     }
 
                     // drawing
-                    draw_screen(&mut chip8_state, args.pixel_size as usize);
+                    draw_screen(chip8_state, args.pixel_size as usize);
                     if args.debug_mode {
-                        debug_windows(&mut chip8_state, &mut steps, &mut breakpoint_addr);
+                        debug_windows(chip8_state, &mut steps, &mut breakpoint_addr);
                     }
                     next_frame().await;
 
@@ -253,21 +239,27 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
         }
         // handle emulation
-        if !chip8_state.keypress_halt && !chip8_state.stop {
-            chip8_state.execute_instruction();
-
-            if chip8_state.steps_to_stop > 0 {
-                chip8_state.steps_to_stop -= 1;
-                if chip8_state.steps_to_stop == 0 {
-                    chip8_state.stop = true;
-                }
-            }
-
-            chip8_state.check_for_breakpoints();
-        }
+        chip8_state.emulate_instruction();
 
         let to_sleep = time::Duration::from_millis(2);
 
         thread::sleep(to_sleep);
     }
+}
+
+#[macroquad::main("yayachip8rsemu")]
+async fn main() -> Result<(), Box<dyn Error>> {
+    let args = Args::parse();
+
+    let mut file = File::open(&args.file)?;
+    let mut memory = vec![0u8; 0x200];
+    let mut contents = Vec::<u8>::new();
+    file.read_to_end(&mut contents)?;
+    memory.append(&mut contents);
+    let mut chip8_state = Chip8State::from_memory(memory);
+    chip8_state.pc = 0x200;
+
+    main_loop(&mut chip8_state, &args).await;
+
+    Ok(())
 }
