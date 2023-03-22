@@ -120,7 +120,7 @@ fn debug_windows(chip8_state: &mut Chip8State, steps: &mut String, breakpoint_ad
                 chip8_state.stop = true;
             }
             ui.same_line(0.0);
-            if ui.button(None, "Start") {
+            if ui.button(None, "Continue") {
                 chip8_state.stop = false;
             }
 
