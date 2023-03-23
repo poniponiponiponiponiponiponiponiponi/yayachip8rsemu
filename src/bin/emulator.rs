@@ -1,5 +1,4 @@
 use clap::Parser;
-// use yayachip8rsemu::disasm::Instruction;
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;

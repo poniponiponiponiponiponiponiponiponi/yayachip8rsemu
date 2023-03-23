@@ -128,10 +128,7 @@ impl Chip8State {
         let mut disasm_str = String::new();
         for i in (-6..=18).step_by(2) {
             let inst_addr = self.pc as i32 + i;
-            if inst_addr < 0 {
-                disasm_str += "\n";
-                continue;
-            } else if inst_addr as usize >= self.memory.len() - 1 {
+            if inst_addr < 0 || inst_addr as usize >= self.memory.len() - 1 {
                 disasm_str += "\n";
                 continue;
             }
@@ -614,7 +611,7 @@ impl Chip8State {
             let to_write = self.reg[i].to_ne_bytes();
             self.memory.write(self.addr as usize + i, &to_write);
         }
-        self.pc += 2
+        self.pc += 2;
     }
 
     // FX65

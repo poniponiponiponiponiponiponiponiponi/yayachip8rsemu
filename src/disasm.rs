@@ -121,31 +121,31 @@ fn find_instruction_func(inst: u16) -> fn(u16) -> Instruction {
         skip_eq
     } else if inst & 0xf000 == 0x4000 {
         skip_neq
-    } else if inst & 0xf000 == 0x5000 && inst & 0x000f == 0 {
+    } else if inst & 0xf000 == 0x5000 && inst & 0x000f == 0x0 {
         skip_regs_eq
     } else if inst & 0xf000 == 0x6000 {
         set_val
     } else if inst & 0xf000 == 0x7000 {
         add_val
-    } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0 {
+    } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x0 {
         set_reg
-    } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 1 {
+    } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x1 {
         or_reg
-    } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 2 {
+    } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x2 {
         and_reg
-    } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 3 {
+    } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x3 {
         xor_reg
-    } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 4 {
+    } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x4 {
         add_reg
-    } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 5 {
+    } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x5 {
         sub_reg
-    } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 6 {
+    } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x6 {
         rsh_reg
-    } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 7 {
+    } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x7 {
         reverse_sub_reg
     } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0xe {
         lsh_reg
-    } else if inst & 0xf000 == 0x9000 && inst & 0x000f == 0 {
+    } else if inst & 0xf000 == 0x9000 && inst & 0x000f == 0x0 {
         skip_regs_neq
     } else if inst & 0xf000 == 0xa000 {
         set_addr
