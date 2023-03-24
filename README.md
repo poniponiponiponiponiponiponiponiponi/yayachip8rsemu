@@ -8,7 +8,6 @@ debugging, etc.
 TODO:
 - make a better README.md
 - add sound
-- add speedhacks
 - make the ui prettier
 - add more tests
 - add an option to choose implementation quirks (https://github.com/Timendus/chip8-test-suite#quirks-test)
