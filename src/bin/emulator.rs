@@ -120,6 +120,7 @@ fn debug_windows(
         chip8_state: &mut Chip8State,
         steps: &mut String,
         breakpoint_addr: &mut String,
+        multiplier: &mut String,
         args: &Args) {
     widgets::Window::new(hash!(), vec2(0., 50.), vec2(200., 300.))
         .label("Debug")
@@ -201,6 +202,33 @@ fn debug_windows(
 
             ui.separator();
             ui.tree_node(hash!(), "Speedhacks", |ui| {
+                if ui.button(None, "0.25x") {
+                    chip8_state.time_multiplier = 0.25;
+                }
+                ui.same_line(0.0);
+                if ui.button(None, "1x   ") {
+                    chip8_state.time_multiplier = 1.0;
+                }
+                ui.same_line(0.0);
+                if ui.button(None, "2x   ") {
+                    chip8_state.time_multiplier = 2.0;
+                }
+                ui.same_line(0.0);
+                if ui.button(None, "4x   ") {
+                    chip8_state.time_multiplier = 4.0;
+                }
+                ui.separator();
+                ui.label(None, "Custom time multiplier: ");
+                ui.input_text(hash!(), "< --", multiplier);
+                ui.separator();
+                if ui.button(None, "Apply") {
+                    let multiplier = multiplier.parse::<f64>();
+                    if let Ok(multiplier) = multiplier {
+                        chip8_state.time_multiplier = multiplier;
+                    } else {
+                        eprintln!("Multiplier is not a number");
+                    }
+                }
             });
         });
 
@@ -218,31 +246,44 @@ fn debug_windows(
 }
 
 async fn main_loop(chip8_state: &mut Chip8State, args: &Args) {
-    let mut now = SystemTime::now();
+    let mut screen_timer = SystemTime::now();
+    let mut timer_timer = SystemTime::now();
 
     // input values for the interface
     let mut steps = String::new();
     let mut breakpoint_addr = String::new();
+    let mut multiplier = String::new();
     loop {
         handle_input(chip8_state);
-        match now.elapsed() {
+
+        match timer_timer.elapsed() {
             Ok(elapsed) => {
-                if elapsed.as_millis() > 1000/60 {
+                if elapsed.as_millis() > (1000 as f64/60 as f64/chip8_state.time_multiplier) as u128 {
                     if chip8_state.delay_timer != 0 {
                         chip8_state.delay_timer -= 1;
                     }
                     if chip8_state.sound_timer != 0 {
                         chip8_state.sound_timer -= 1;
                     }
+                    timer_timer = SystemTime::now();
+                }
+            }
+            Err(e) => {
+                println!("Error: {e:?}");
+            }
+        }
 
+        match screen_timer.elapsed() {
+            Ok(elapsed) => {
+                if elapsed.as_millis() > 1000/60 {
                     // drawing
                     draw_screen(chip8_state, args.pixel_size as usize);
                     if args.debug_mode {
-                        debug_windows(chip8_state, &mut steps, &mut breakpoint_addr, args);
+                        debug_windows(chip8_state, &mut steps, &mut breakpoint_addr, &mut multiplier, args);
                     }
                     next_frame().await;
 
-                    now = SystemTime::now();
+                    screen_timer = SystemTime::now();
                 }
             }
             Err(e) => {
@@ -252,7 +293,7 @@ async fn main_loop(chip8_state: &mut Chip8State, args: &Args) {
         // handle emulation
         chip8_state.emulate_instruction();
 
-        let to_sleep = time::Duration::from_millis(2);
+        let to_sleep = time::Duration::from_micros((2000.0/chip8_state.time_multiplier) as u64);
 
         thread::sleep(to_sleep);
     }

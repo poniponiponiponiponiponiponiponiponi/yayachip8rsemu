@@ -39,6 +39,7 @@ pub struct Chip8State {
     pub stop: bool,
     pub steps_to_stop: u16,
     pub breakpoints: Vec<Breakpoint>,
+    pub time_multiplier: f64,
 }
 
 impl Default for Chip8State {
@@ -64,6 +65,7 @@ impl Chip8State {
             stop: false,
             steps_to_stop: 0,
             breakpoints: Vec::new(),
+            time_multiplier: 1.0,
         }
     }
 
@@ -83,6 +85,7 @@ impl Chip8State {
             stop: false,
             steps_to_stop: 0,
             breakpoints: Vec::new(),
+            time_multiplier: 1.0,
         }
     }
 
