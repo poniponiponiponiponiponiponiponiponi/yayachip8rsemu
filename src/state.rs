@@ -258,34 +258,34 @@ impl Chip8State {
 
     // 0NNN
     pub fn call_rca1802_code_routine(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 0);
+        assert_eq!((inst & 0xf000) >> 12, 0);
         self.pc += 2;
     }
 
     // 00E0
     pub fn clear_display(&mut self, inst: u16) {
-        assert!(inst == 0x00e0);
+        assert_eq!(inst, 0x00e0);
         self.screen = [[false; 64]; 32];
         self.pc += 2;
     }
 
     // 00ee
     pub fn return_from_subroutine(&mut self, inst: u16) {
-        assert!(inst == 0x00ee);
+        assert_eq!(inst, 0x00ee);
         let addr = self.stack.pop();
         self.pc = addr;
     }
 
     // 1NNN
     pub fn jmp(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 1);
+        assert_eq!((inst & 0xf000) >> 12, 1);
         let nnn = inst & 0x0fff;
         self.pc = nnn;
     }
 
     // 2NNN
     pub fn call(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 2);
+        assert_eq!((inst & 0xf000) >> 12, 2);
         self.stack.push(self.pc + 2);
         let nnn = inst & 0x0fff;
         self.pc = nnn;
@@ -293,7 +293,7 @@ impl Chip8State {
 
     // 3XNN
     pub fn skip_eq(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 3);
+        assert_eq!((inst & 0xf000) >> 12, 3);
         let nn = (inst & 0x00ff) as u8;
         let x = ((inst & 0x0f00) >> 8) as usize;
         if self.reg[x] == nn {
@@ -305,7 +305,7 @@ impl Chip8State {
 
     // 4XNN
     pub fn skip_neq(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 4);
+        assert_eq!((inst & 0xf000) >> 12, 4);
         let nn = (inst & 0x00ff) as u8;
         let x = ((inst & 0x0f00) >> 8) as usize;
         if self.reg[x] != nn {
@@ -317,8 +317,8 @@ impl Chip8State {
 
     // 5XY0
     pub fn skip_regs_eq(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 5);
-        assert!(inst & 0x000f == 0);
+        assert_eq!((inst & 0xf000) >> 12, 5);
+        assert_eq!(inst & 0x000f, 0);
         let x = ((inst & 0x0f00) >> 8) as usize;
         let y = ((inst & 0x00f0) >> 4) as usize;
         if self.reg[x] == self.reg[y] {
@@ -330,7 +330,7 @@ impl Chip8State {
 
     // 6XNN
     pub fn set_val(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 6);
+        assert_eq!((inst & 0xf000) >> 12, 6);
         let x = ((inst & 0x0f00) >> 8) as usize;
         let nn: u8 = (inst & 0x00ff) as u8;
         self.reg[x] = nn;
@@ -339,7 +339,7 @@ impl Chip8State {
 
     // 7XNN
     pub fn add_val(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 7);
+        assert_eq!((inst & 0xf000) >> 12, 7);
         let x = ((inst & 0x0f00) >> 8) as usize;
         let nn: u8 = (inst & 0x00ff) as u8;
         self.reg[x] = self.reg[x].wrapping_add(nn);
@@ -348,8 +348,8 @@ impl Chip8State {
 
     // 8XY0
     pub fn set_reg(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 8);
-        assert!(inst & 0x000f == 0);
+        assert_eq!((inst & 0xf000) >> 12, 8);
+        assert_eq!(inst & 0x000f, 0);
         let x = ((inst & 0x0f00) >> 8) as usize;
         let y = ((inst & 0x00f0) >> 4) as usize;
         self.reg[x] = self.reg[y];
@@ -358,8 +358,8 @@ impl Chip8State {
 
     // 8XY1
     pub fn or_reg(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 8);
-        assert!(inst & 0x000f == 1);
+        assert_eq!((inst & 0xf000) >> 12, 8);
+        assert_eq!(inst & 0x000f, 1);
         let x = ((inst & 0x0f00) >> 8) as usize;
         let y = ((inst & 0x00f0) >> 4) as usize;
         self.reg[x] |= self.reg[y];
@@ -368,8 +368,8 @@ impl Chip8State {
 
     // 8XY2
     pub fn and_reg(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 8);
-        assert!(inst & 0x000f == 2);
+        assert_eq!((inst & 0xf000) >> 12, 8);
+        assert_eq!(inst & 0x000f, 2);
         let x = ((inst & 0x0f00) >> 8) as usize;
         let y = ((inst & 0x00f0) >> 4) as usize;
         self.reg[x] &= self.reg[y];
@@ -378,8 +378,8 @@ impl Chip8State {
 
     // 8XY3
     pub fn xor_reg(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 8);
-        assert!(inst & 0x000f == 3);
+        assert_eq!((inst & 0xf000) >> 12, 8);
+        assert_eq!(inst & 0x000f, 3);
         let x = ((inst & 0x0f00) >> 8) as usize;
         let y = ((inst & 0x00f0) >> 4) as usize;
         self.reg[x] ^= self.reg[y];
@@ -388,8 +388,8 @@ impl Chip8State {
 
     // 8XY4
     pub fn add_reg(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 8);
-        assert!(inst & 0x000f == 4);
+        assert_eq!((inst & 0xf000) >> 12, 8);
+        assert_eq!(inst & 0x000f, 4);
         let x = ((inst & 0x0f00) >> 8) as usize;
         let y = ((inst & 0x00f0) >> 4) as usize;
         let (result, carry) = self.reg[x].overflowing_add(self.reg[y]);
@@ -400,8 +400,8 @@ impl Chip8State {
 
     // 8XY5
     pub fn sub_reg(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 8);
-        assert!(inst & 0x000f == 5);
+        assert_eq!((inst & 0xf000) >> 12, 8);
+        assert_eq!(inst & 0x000f, 5);
         let x = ((inst & 0x0f00) >> 8) as usize;
         let y = ((inst & 0x00f0) >> 4) as usize;
         let (result, borrow) = self.reg[x].overflowing_sub(self.reg[y]);
@@ -412,8 +412,8 @@ impl Chip8State {
 
     // 8XY6
     pub fn rsh_reg(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 8);
-        assert!(inst & 0x000f == 6);
+        assert_eq!((inst & 0xf000) >> 12, 8);
+        assert_eq!(inst & 0x000f, 6);
         let x = ((inst & 0x0f00) >> 8) as usize;
         // So the order of operations is correct when performing operations
         // on the 0xf register.
@@ -425,8 +425,8 @@ impl Chip8State {
 
     // 8XY7
     pub fn reverse_sub_reg(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 8);
-        assert!(inst & 0x000f == 7);
+        assert_eq!((inst & 0xf000) >> 12, 8);
+        assert_eq!(inst & 0x000f, 7);
         let x = ((inst & 0x0f00) >> 8) as usize;
         let y = ((inst & 0x00f0) >> 4) as usize;
         let (result, borrow) = self.reg[y].overflowing_sub(self.reg[x]);
@@ -437,8 +437,8 @@ impl Chip8State {
 
     // 8XYE
     pub fn lsh_reg(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 8);
-        assert!(inst & 0x000f == 0xe);
+        assert_eq!((inst & 0xf000) >> 12, 8);
+        assert_eq!(inst & 0x000f, 0xe);
         let x = ((inst & 0x0f00) >> 8) as usize;
         // See comment on 8XY6.
         let tmp = (self.reg[x] & 0x80) >> 7;
@@ -449,8 +449,8 @@ impl Chip8State {
 
     // 9XY0
     pub fn skip_regs_neq(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 9);
-        assert!(inst & 0x000f == 0);
+        assert_eq!((inst & 0xf000) >> 12, 9);
+        assert_eq!(inst & 0x000f, 0);
         let x = ((inst & 0x0f00) >> 8) as usize;
         let y = ((inst & 0x00f0) >> 4) as usize;
         if self.reg[x] != self.reg[y] {
@@ -462,21 +462,21 @@ impl Chip8State {
 
     // ANNN
     pub fn set_addr(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 0xa);
+        assert_eq!((inst & 0xf000) >> 12, 0xa);
         self.addr = inst & 0x0fff;
         self.pc += 2;
     }
 
     // BNNN
     pub fn jmp_plus(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 0xb);
+        assert_eq!((inst & 0xf000) >> 12, 0xb);
         let nnn = inst & 0x0fff;
         self.pc = nnn + self.reg[0] as u16;
     }
 
     // CXNN
     pub fn rand(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 0xc);
+        assert_eq!((inst & 0xf000) >> 12, 0xc);
         let x = ((inst & 0x0f00) >> 8) as usize;
         let nn: u8 = (inst & 0xff) as u8;
         self.reg[x] = rand::thread_rng().gen();
@@ -486,7 +486,7 @@ impl Chip8State {
 
     // DXYN
     pub fn draw(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 0xd);
+        assert_eq!((inst & 0xf000) >> 12, 0xd);
         let x = ((inst & 0x0f00) >> 8) as usize;
         let y = ((inst & 0x00f0) >> 4) as usize;
         let n: u8 = (inst & 0xf) as u8;
@@ -513,8 +513,8 @@ impl Chip8State {
 
     // EX9E
     pub fn skip_if_pressed(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 0xe);
-        assert!(inst & 0x00ff == 0x9e);
+        assert_eq!((inst & 0xf000) >> 12, 0xe);
+        assert_eq!(inst & 0x00ff, 0x9e);
         let x = ((inst & 0x0f00) >> 8) as usize;
         if self.key_pressed[self.reg[x] as usize] {
             self.pc += 4;
@@ -525,8 +525,8 @@ impl Chip8State {
 
     // EXA1
     pub fn skip_if_not_pressed(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 0xe);
-        assert!(inst & 0x00ff == 0xa1);
+        assert_eq!((inst & 0xf000) >> 12, 0xe);
+        assert_eq!(inst & 0x00ff, 0xa1);
         let x = ((inst & 0x0f00) >> 8) as usize;
         if !self.key_pressed[self.reg[x] as usize] {
             self.pc += 4;
@@ -537,8 +537,8 @@ impl Chip8State {
 
     // FX07
     pub fn get_delay_timer(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 0xf);
-        assert!(inst & 0x00ff == 7);
+        assert_eq!((inst & 0xf000) >> 12, 0xf);
+        assert_eq!(inst & 0x00ff, 7);
         let x = ((inst & 0x0f00) >> 8) as usize;
         self.reg[x] = self.delay_timer;
         self.pc += 2;
@@ -546,8 +546,8 @@ impl Chip8State {
 
     // FX0A
     pub fn get_keypress(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 0xf);
-        assert!(inst & 0x00ff == 0x0a);
+        assert_eq!((inst & 0xf000) >> 12, 0xf);
+        assert_eq!(inst & 0x00ff, 0x0a);
         let x = ((inst & 0x0f00) >> 8) as usize;
         self.keypress_halt = true;
         self.keypress_reg = x as u8;
@@ -556,8 +556,8 @@ impl Chip8State {
 
     // FX15
     pub fn set_delay_timer(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 0xf);
-        assert!(inst & 0x00ff == 0x15);
+        assert_eq!((inst & 0xf000) >> 12, 0xf);
+        assert_eq!(inst & 0x00ff, 0x15);
         let x = ((inst & 0x0f00) >> 8) as usize;
         self.delay_timer = self.reg[x];
         self.pc += 2;
@@ -565,8 +565,8 @@ impl Chip8State {
 
     // FX18
     pub fn set_sound_timer(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 0xf);
-        assert!(inst & 0x00ff == 0x18);
+        assert_eq!((inst & 0xf000) >> 12, 0xf);
+        assert_eq!(inst & 0x00ff, 0x18);
         let x = ((inst & 0x0f00) >> 8) as usize;
         self.sound_timer = self.reg[x];
         self.pc += 2;
@@ -574,8 +574,8 @@ impl Chip8State {
 
     // FX1E
     pub fn add_to_addr(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 0xf);
-        assert!(inst & 0x00ff == 0x1e);
+        assert_eq!((inst & 0xf000) >> 12, 0xf);
+        assert_eq!(inst & 0x00ff, 0x1e);
         let x = ((inst & 0x0f00) >> 8) as usize;
         self.addr += self.reg[x] as u16;
         self.pc += 2;
@@ -585,16 +585,16 @@ impl Chip8State {
     pub fn set_addr_to_sprite_addr(&mut self, inst: u16) {
         println!("TODOTODOTODO");
         // TODO
-        assert!((inst & 0xf000) >> 12 == 0xf);
-        assert!(inst & 0x00ff == 0x29);
+        assert_eq!((inst & 0xf000) >> 12, 0xf);
+        assert_eq!(inst & 0x00ff, 0x29);
         let _x = ((inst & 0x0f00) >> 8) as usize;
         self.pc += 2;
     }
 
     // FX33
     pub fn store_bcd(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 0xf);
-        assert!(inst & 0x00ff == 0x33);
+        assert_eq!((inst & 0xf000) >> 12, 0xf);
+        assert_eq!(inst & 0x00ff, 0x33);
         let x = ((inst & 0x0f00) >> 8) as usize;
         let mut number = self.reg[x];
         for i in (0..=2).rev() {
@@ -607,8 +607,8 @@ impl Chip8State {
 
     // FX55
     pub fn reg_dump(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 0xf);
-        assert!(inst & 0x00ff == 0x55);
+        assert_eq!((inst & 0xf000) >> 12, 0xf);
+        assert_eq!(inst & 0x00ff, 0x55);
         let x = ((inst & 0x0f00) >> 8) as usize;
         for i in 0..x+1 {
             let to_write = self.reg[i].to_ne_bytes();
@@ -619,8 +619,8 @@ impl Chip8State {
 
     // FX65
     pub fn reg_load(&mut self, inst: u16) {
-        assert!((inst & 0xf000) >> 12 == 0xf);
-        assert!(inst & 0x00ff == 0x65);
+        assert_eq!((inst & 0xf000) >> 12, 0xf);
+        assert_eq!(inst & 0x00ff, 0x65);
         let x = ((inst & 0x0f00) >> 8) as usize;
         for i in 0..x+1 {
             let readed = self.memory.read(self.addr as usize + i, 1);

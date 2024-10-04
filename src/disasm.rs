@@ -184,7 +184,7 @@ fn find_instruction_func(inst: u16) -> fn(u16) -> Instruction {
 
 // 0NNN
 fn call_rca1802_code_routine(inst: u16) -> Instruction {
-    assert!(inst & 0xf000 == 0x0000);
+    assert_eq!(inst & 0xf000, 0x0000);
     Instruction {
         instruction_type: InstructionType::CallRca1802CodeRoutine,
         args: String::from(""),
@@ -193,7 +193,7 @@ fn call_rca1802_code_routine(inst: u16) -> Instruction {
 
 // 00E0
 fn clear_display(inst: u16) -> Instruction {
-    assert!(inst == 0x00e0);
+    assert_eq!(inst, 0x00e0);
     Instruction {
         instruction_type: InstructionType::ClearDisplay,
         args: String::from(""),
@@ -202,7 +202,7 @@ fn clear_display(inst: u16) -> Instruction {
 
 // 00ee
 fn return_from_subroutine(inst: u16) -> Instruction {
-    assert!(inst == 0x00ee);
+    assert_eq!(inst, 0x00ee);
     Instruction {
         instruction_type: InstructionType::ReturnFromSubroutine,
         args: String::from(""),
@@ -211,7 +211,7 @@ fn return_from_subroutine(inst: u16) -> Instruction {
 
 // 1NNN
 fn jmp(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 1);
+    assert_eq!((inst & 0xf000) >> 12, 1);
     let nnn = inst & 0x0fff;
     Instruction {
         instruction_type: InstructionType::Jmp,
@@ -221,7 +221,7 @@ fn jmp(inst: u16) -> Instruction {
 
 // 2NNN
 fn call(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 2);
+    assert_eq!((inst & 0xf000) >> 12, 2);
     let nnn = inst & 0x0fff;
     Instruction {
         instruction_type: InstructionType::Call,
@@ -231,7 +231,7 @@ fn call(inst: u16) -> Instruction {
 
 // 3XNN
 fn skip_eq(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 3);
+    assert_eq!((inst & 0xf000) >> 12, 3);
     let nn = (inst & 0x00ff) as u8;
     let x = ((inst & 0x0f00) >> 8) as usize;
     Instruction {
@@ -242,7 +242,7 @@ fn skip_eq(inst: u16) -> Instruction {
 
 // 4XNN
 fn skip_neq(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 4);
+    assert_eq!((inst & 0xf000) >> 12, 4);
     let nn = (inst & 0x00ff) as u8;
     let x = ((inst & 0x0f00) >> 8) as usize;
     Instruction {
@@ -253,8 +253,8 @@ fn skip_neq(inst: u16) -> Instruction {
 
 // 5XY0
 fn skip_regs_eq(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 5);
-    assert!(inst & 0x000f == 0);
+    assert_eq!((inst & 0xf000) >> 12, 5);
+    assert_eq!(inst & 0x000f, 0);
     let x = ((inst & 0x0f00) >> 8) as usize;
     let y = ((inst & 0x00f0) >> 4) as usize;
     Instruction {
@@ -265,7 +265,7 @@ fn skip_regs_eq(inst: u16) -> Instruction {
 
 // 6XNN
 fn set_val(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 6);
+    assert_eq!((inst & 0xf000) >> 12, 6);
     let x = ((inst & 0x0f00) >> 8) as usize;
     let nn: u8 = (inst & 0x00ff) as u8;
     Instruction {
@@ -276,7 +276,7 @@ fn set_val(inst: u16) -> Instruction {
 
 // 7XNN
 fn add_val(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 7);
+    assert_eq!((inst & 0xf000) >> 12, 7);
     let x = ((inst & 0x0f00) >> 8) as usize;
     let nn: u8 = (inst & 0x00ff) as u8;
     Instruction {
@@ -287,8 +287,8 @@ fn add_val(inst: u16) -> Instruction {
 
 // 8XY0
 fn set_reg(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 8);
-    assert!(inst & 0x000f == 0);
+    assert_eq!((inst & 0xf000) >> 12, 8);
+    assert_eq!(inst & 0x000f, 0);
     let x = ((inst & 0x0f00) >> 8) as usize;
     let y = ((inst & 0x00f0) >> 4) as usize;
     Instruction {
@@ -299,8 +299,8 @@ fn set_reg(inst: u16) -> Instruction {
 
 // 8XY1
 fn or_reg(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 8);
-    assert!(inst & 0x000f == 1);
+    assert_eq!((inst & 0xf000) >> 12, 8);
+    assert_eq!(inst & 0x000f, 1);
     let x = ((inst & 0x0f00) >> 8) as usize;
     let y = ((inst & 0x00f0) >> 4) as usize;
     Instruction {
@@ -311,8 +311,8 @@ fn or_reg(inst: u16) -> Instruction {
 
 // 8XY2
 fn and_reg(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 8);
-    assert!(inst & 0x000f == 2);
+    assert_eq!((inst & 0xf000) >> 12, 8);
+    assert_eq!(inst & 0x000f, 2);
     let x = ((inst & 0x0f00) >> 8) as usize;
     let y = ((inst & 0x00f0) >> 4) as usize;
     Instruction {
@@ -323,8 +323,8 @@ fn and_reg(inst: u16) -> Instruction {
 
 // 8XY3
 fn xor_reg(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 8);
-    assert!(inst & 0x000f == 3);
+    assert_eq!((inst & 0xf000) >> 12, 8);
+    assert_eq!(inst & 0x000f, 3);
     let x = ((inst & 0x0f00) >> 8) as usize;
     let y = ((inst & 0x00f0) >> 4) as usize;
     Instruction {
@@ -335,8 +335,8 @@ fn xor_reg(inst: u16) -> Instruction {
 
 // 8XY4
 fn add_reg(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 8);
-    assert!(inst & 0x000f == 4);
+    assert_eq!((inst & 0xf000) >> 12, 8);
+    assert_eq!(inst & 0x000f, 4);
     let x = ((inst & 0x0f00) >> 8) as usize;
     let y = ((inst & 0x00f0) >> 4) as usize;
     Instruction {
@@ -347,8 +347,8 @@ fn add_reg(inst: u16) -> Instruction {
 
 // 8XY5
 fn sub_reg(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 8);
-    assert!(inst & 0x000f == 5);
+    assert_eq!((inst & 0xf000) >> 12, 8);
+    assert_eq!(inst & 0x000f, 5);
     let x = ((inst & 0x0f00) >> 8) as usize;
     let y = ((inst & 0x00f0) >> 4) as usize;
     Instruction {
@@ -359,8 +359,8 @@ fn sub_reg(inst: u16) -> Instruction {
 
 // 8XY6
 fn rsh_reg(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 8);
-    assert!(inst & 0x000f == 6);
+    assert_eq!((inst & 0xf000) >> 12, 8);
+    assert_eq!(inst & 0x000f, 6);
     let x = ((inst & 0x0f00) >> 8) as usize;
     Instruction {
         instruction_type: InstructionType::RshReg,
@@ -370,8 +370,8 @@ fn rsh_reg(inst: u16) -> Instruction {
 
 // 8XY7
 fn reverse_sub_reg(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 8);
-    assert!(inst & 0x000f == 7);
+    assert_eq!((inst & 0xf000) >> 12, 8);
+    assert_eq!(inst & 0x000f, 7);
     let x = ((inst & 0x0f00) >> 8) as usize;
     let y = ((inst & 0x00f0) >> 4) as usize;
     Instruction {
@@ -382,8 +382,8 @@ fn reverse_sub_reg(inst: u16) -> Instruction {
 
 // 8XYE
 fn lsh_reg(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 8);
-    assert!(inst & 0x000f == 0xe);
+    assert_eq!((inst & 0xf000) >> 12, 8);
+    assert_eq!(inst & 0x000f, 0xe);
     let x = ((inst & 0x0f00) >> 8) as usize;
     Instruction {
         instruction_type: InstructionType::LshReg,
@@ -393,8 +393,8 @@ fn lsh_reg(inst: u16) -> Instruction {
 
 // 9XY0
 fn skip_regs_neq(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 9);
-    assert!(inst & 0x000f == 0);
+    assert_eq!((inst & 0xf000) >> 12, 9);
+    assert_eq!(inst & 0x000f, 0);
     let x = ((inst & 0x0f00) >> 8) as usize;
     let y = ((inst & 0x00f0) >> 4) as usize;
     Instruction {
@@ -405,7 +405,7 @@ fn skip_regs_neq(inst: u16) -> Instruction {
 
 // ANNN
 fn set_addr(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 0xa);
+    assert_eq!((inst & 0xf000) >> 12, 0xa);
     let nnn = inst & 0x0fff;
     Instruction {
         instruction_type: InstructionType::SetAddr,
@@ -415,7 +415,7 @@ fn set_addr(inst: u16) -> Instruction {
 
 // BNNN
 fn jmp_plus(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 0xb);
+    assert_eq!((inst & 0xf000) >> 12, 0xb);
     let nnn = inst & 0x0fff;
     Instruction {
         instruction_type: InstructionType::JmpPlus,
@@ -425,7 +425,7 @@ fn jmp_plus(inst: u16) -> Instruction {
 
 // CXNN
 fn rand(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 0xc);
+    assert_eq!((inst & 0xf000) >> 12, 0xc);
     let x = ((inst & 0x0f00) >> 8) as usize;
     let nn: u8 = (inst & 0xff) as u8;
     Instruction {
@@ -436,7 +436,7 @@ fn rand(inst: u16) -> Instruction {
 
 // DXYN
 fn draw(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 0xd);
+    assert_eq!((inst & 0xf000) >> 12, 0xd);
     let x = ((inst & 0x0f00) >> 8) as usize;
     let y = ((inst & 0x00f0) >> 4) as usize;
     let n: u8 = (inst & 0xf) as u8;
@@ -448,8 +448,8 @@ fn draw(inst: u16) -> Instruction {
 
 // EX9E
 fn skip_if_pressed(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 0xe);
-    assert!(inst & 0x00ff == 0x9e);
+    assert_eq!((inst & 0xf000) >> 12, 0xe);
+    assert_eq!(inst & 0x00ff, 0x9e);
     let x = ((inst & 0x0f00) >> 8) as usize;
     Instruction {
         instruction_type: InstructionType::SkipIfPressed,
@@ -459,8 +459,8 @@ fn skip_if_pressed(inst: u16) -> Instruction {
 
 // EXA1
 fn skip_if_not_pressed(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 0xe);
-    assert!(inst & 0x00ff == 0xa1);
+    assert_eq!((inst & 0xf000) >> 12, 0xe);
+    assert_eq!(inst & 0x00ff, 0xa1);
     let x = ((inst & 0x0f00) >> 8) as usize;
     Instruction {
         instruction_type: InstructionType::SkipIfNotPressed,
@@ -470,8 +470,8 @@ fn skip_if_not_pressed(inst: u16) -> Instruction {
 
 // FX07
 fn get_delay_timer(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 0xf);
-    assert!(inst & 0x00ff == 7);
+    assert_eq!((inst & 0xf000) >> 12, 0xf);
+    assert_eq!(inst & 0x00ff, 7);
     let x = ((inst & 0x0f00) >> 8) as usize;
     Instruction {
         instruction_type: InstructionType::GetDelayTimer,
@@ -481,8 +481,8 @@ fn get_delay_timer(inst: u16) -> Instruction {
 
 // FX0A
 fn get_keypress(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 0xf);
-    assert!(inst & 0x00ff == 0x0a);
+    assert_eq!((inst & 0xf000) >> 12, 0xf);
+    assert_eq!(inst & 0x00ff, 0x0a);
     let x = ((inst & 0x0f00) >> 8) as usize;
     Instruction {
         instruction_type: InstructionType::GetKeypress,
@@ -492,8 +492,8 @@ fn get_keypress(inst: u16) -> Instruction {
 
 // FX15
 fn set_delay_timer(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 0xf);
-    assert!(inst & 0x00ff == 0x15);
+    assert_eq!((inst & 0xf000) >> 12, 0xf);
+    assert_eq!(inst & 0x00ff, 0x15);
     let x = ((inst & 0x0f00) >> 8) as usize;
     Instruction {
         instruction_type: InstructionType::GetDelayTimer,
@@ -503,8 +503,8 @@ fn set_delay_timer(inst: u16) -> Instruction {
 
 // FX18
 fn set_sound_timer(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 0xf);
-    assert!(inst & 0x00ff == 0x18);
+    assert_eq!((inst & 0xf000) >> 12, 0xf);
+    assert_eq!(inst & 0x00ff, 0x18);
     let x = ((inst & 0x0f00) >> 8) as usize;
     Instruction {
         instruction_type: InstructionType::SetSoundTimer,
@@ -514,8 +514,8 @@ fn set_sound_timer(inst: u16) -> Instruction {
 
 // FX1E
 fn add_to_addr(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 0xf);
-    assert!(inst & 0x00ff == 0x1e);
+    assert_eq!((inst & 0xf000) >> 12, 0xf);
+    assert_eq!(inst & 0x00ff, 0x1e);
     let x = ((inst & 0x0f00) >> 8) as usize;
     Instruction {
         instruction_type: InstructionType::AddToAddr,
@@ -526,8 +526,8 @@ fn add_to_addr(inst: u16) -> Instruction {
 // FX29
 fn set_addr_to_sprite_addr(inst: u16) -> Instruction {
     // TODO
-    assert!((inst & 0xf000) >> 12 == 0xf);
-    assert!(inst & 0x00ff == 0x29);
+    assert_eq!((inst & 0xf000) >> 12, 0xf);
+    assert_eq!(inst & 0x00ff, 0x29);
     let x = ((inst & 0x0f00) >> 8) as usize;
     Instruction {
         instruction_type: InstructionType::SetAddrToSpriteAddr,
@@ -537,8 +537,8 @@ fn set_addr_to_sprite_addr(inst: u16) -> Instruction {
 
 // FX33
 fn store_bcd(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 0xf);
-    assert!(inst & 0x00ff == 0x33);
+    assert_eq!((inst & 0xf000) >> 12, 0xf);
+    assert_eq!(inst & 0x00ff, 0x33);
     let x = ((inst & 0x0f00) >> 8) as usize;
     Instruction {
         instruction_type: InstructionType::StoreBcd,
@@ -548,8 +548,8 @@ fn store_bcd(inst: u16) -> Instruction {
 
 // FX55
 fn reg_dump(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 0xf);
-    assert!(inst & 0x00ff == 0x55);
+    assert_eq!((inst & 0xf000) >> 12, 0xf);
+    assert_eq!(inst & 0x00ff, 0x55);
     let x = ((inst & 0x0f00) >> 8) as usize;
     Instruction {
         instruction_type: InstructionType::RegDump,
@@ -559,8 +559,8 @@ fn reg_dump(inst: u16) -> Instruction {
 
 // FX65
 fn reg_load(inst: u16) -> Instruction {
-    assert!((inst & 0xf000) >> 12 == 0xf);
-    assert!(inst & 0x00ff == 0x65);
+    assert_eq!((inst & 0xf000) >> 12, 0xf);
+    assert_eq!(inst & 0x00ff, 0x65);
     let x = ((inst & 0x0f00) >> 8) as usize;
     Instruction {
         instruction_type: InstructionType::RegLoad,
