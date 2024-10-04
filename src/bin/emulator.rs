@@ -280,7 +280,7 @@ async fn main_loop(chip8_state: &mut Chip8State, args: &Args) {
                 }
             }
             Err(e) => {
-                println!("Error: {e:?}");
+                eprintln!("Error: {e:?}");
             }
         }
 
@@ -298,7 +298,7 @@ async fn main_loop(chip8_state: &mut Chip8State, args: &Args) {
                 }
             }
             Err(e) => {
-                println!("Error: {e:?}");
+                eprintln!("Error: {e:?}");
             }
         }
         // handle emulation
