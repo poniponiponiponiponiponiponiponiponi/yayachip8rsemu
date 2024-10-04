@@ -5,8 +5,8 @@ use std::io::prelude::*;
 use yayachip8rsemu::disasm;
 
 #[derive(Parser, Debug)]
-#[command(author = "tabun dareka <tabun.dareka@protonmail.com>")]
-#[command(about = "Chip8 disassembler", long_about = None)]
+#[command(author = "poni <poniponiponiponiponiponiponiponiponiponi@protonmail.com>")]
+#[command(about = "yayachip8rsemu disassembler", long_about = None)]
 #[command(version)]
 struct Args {
    /// Print verbose information.

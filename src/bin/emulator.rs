@@ -10,8 +10,8 @@ use std::time::SystemTime;
 use std::{thread, time};
 
 #[derive(Parser, Debug)]
-#[command(author = "tabun dareka <tabun.dareka@protonmail.com>")]
-#[command(about = "Chip8 emulator", long_about = None)]
+#[command(author = "poni <poniponiponiponiponiponiponiponiponiponi@protonmail.com>")]
+#[command(about = "yayachip8rsemu", long_about = None)]
 #[command(version)]
 struct Args {
     /// File to run.
