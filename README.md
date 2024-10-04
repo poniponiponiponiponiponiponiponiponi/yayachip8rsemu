@@ -1,13 +1,12 @@
 ![](/preview.gif)
 
-Yet another `yet another chip8 rust emulator` that I created to play around
-with rust, get the basic file structure right for my future rust projects, etc.
-If you're writing a chip8 emulator for yourself this project might be useful
-for you to compare it with your own when you will come across a bug or
-something, especially since I put a lot of weight on having good disassembly,
-debugging, etc.
+Yet another `yet another chip8 rust emulator` that I created for fun.
+If you're writing a chip8 emulator on your own this project might be
+useful for you to compare it with your implementation when you will
+come across a bug or something, especially since I put some focus on
+having a good disassembly, debugger, etc.
 
-Compile and run with the command:
+Compile and run with the following command:
 ```cargo run --bin emulator -- --file some_game_path --debug-mode```
 There's also a disassembler that you can compile with:
 ```cargo rustc --bin disassembler```
