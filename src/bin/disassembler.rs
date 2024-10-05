@@ -9,19 +9,19 @@ use yayachip8rsemu::disasm;
 #[command(about = "yayachip8rsemu disassembler", long_about = None)]
 #[command(version)]
 struct Args {
-   /// Print verbose information.
+   /// Print verbose information
    #[arg(short, long, action, default_value_t = false)]
    verbose: bool,
 
-   /// File to run.
+   /// File to disassemble
    #[arg(short, long)]
    file: String,
 
-   /// Starting byte.
+   /// File offset
    #[arg(short, long, action, default_value_t = 0)]
    start: usize,
 
-   /// Amount of instruction to print. Zero means to the end.
+   /// Amount of instruction to print. Zero means to the end
    #[arg(short, long, action, default_value_t = 0)]
    instruction_amount: usize,
 }

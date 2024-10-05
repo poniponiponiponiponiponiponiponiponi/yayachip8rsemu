@@ -14,27 +14,27 @@ use std::{thread, time};
 #[command(about = "yayachip8rsemu", long_about = None)]
 #[command(version)]
 struct Args {
-    /// File to run.
+    /// ROM to run
     #[arg(short, long)]
     file: String,
 
-    /// Where to load the binary image.
+    /// Offset where to load the binary image in the Chip8 address space
     #[arg(short, long, action, default_value_t = 0x200)]
     offset: u16,
 
-    /// Execution start address.
+    /// Start address of the execution
     #[arg(long, action, default_value_t = 0x200)]
     start: u16,
 
-    /// Chip8 pixel size.
+    /// Pixel size
     #[arg(short, long, action, default_value_t = 16)]
     pixel_size: i32,
 
-    /// Start with stopped execution.
+    /// Start with stopped execution
     #[arg(short, long, action, default_value_t = false)]
     stop: bool,
 
-    /// Debug mode. Draw special debug windows.
+    /// Debug mode. Draw special debug windows
     #[arg(short, long, action, default_value_t = false)]
     debug_mode: bool,
 }
