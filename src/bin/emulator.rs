@@ -2,6 +2,7 @@ use clap::Parser;
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
+use std::io::Result as IoResult;
 use yayachip8rsemu::state::Chip8State;
 use macroquad::prelude::*;
 use macroquad::ui::{hash, root_ui, widgets, Ui};
@@ -39,6 +40,19 @@ struct Args {
     debug_mode: bool,
 }
 
+impl Args {
+    fn create_chip8(&self) -> IoResult<Chip8State> {
+        let mut file = File::open(&self.file)?;
+        let mut memory = vec![0u8; 0x200];
+        let mut contents = Vec::<u8>::new();
+        file.read_to_end(&mut contents)?;
+        memory.append(&mut contents);
+        let mut chip8_state = Chip8State::from_memory(memory);
+        chip8_state.pc = self.start;
+        Ok(chip8_state)
+    }
+}
+
 fn handle_input(chip8_state: &mut Chip8State) {
     let keyboard_key_chip8_key_pairs = [
         (KeyCode::Key1, 0x1),
@@ -58,21 +72,14 @@ fn handle_input(chip8_state: &mut Chip8State) {
         (KeyCode::C, 0xb),
         (KeyCode::V, 0xf),
     ];
-    let mut latest_press: usize = 0;
-    let mut pressed: bool = false;
-
+    
     for (keyboard_key, chip8_key) in keyboard_key_chip8_key_pairs {
         let is_pressed = is_key_down(keyboard_key);
         if is_pressed && !chip8_state.key_pressed[chip8_key] {
-            latest_press = chip8_key;
-            pressed = true;
+            // last pressed key
+            chip8_state.reg[chip8_state.keypress_reg as usize] = chip8_key as u8;
         }
         chip8_state.key_pressed[chip8_key] = is_pressed;
-    }
-
-    if chip8_state.keypress_halt && pressed {
-        chip8_state.keypress_halt = false;
-        chip8_state.reg[chip8_state.keypress_reg as usize] = latest_press as u8;
     }
 }
 
@@ -83,30 +90,35 @@ fn print_ui_text(ui: &mut Ui, str: String) {
 }
 
 fn draw_screen(chip8_state: &mut Chip8State, ps: usize) {
-    clear_background(BLACK);
+    clear_background(DARKGRAY);
     let mut last_pixel = (0, 0);
     for (y, line) in chip8_state.screen.iter().enumerate() {
         for (x, &pixel) in line.iter().enumerate() {
             last_pixel = (x, y);
             if pixel {
                 draw_rectangle(
-                    x as f32*ps as f32,
-                    y as f32*ps as f32,
+                    x as f32 * ps as f32,
+                    y as f32 * ps as f32,
                     ps as f32,
                     ps as f32,
-                    LIME
+                    PURPLE
                 );
             }
         }
+        
+        // Draw a line on the right side of the screen to designate
+        // an end of the screen
         draw_rectangle(
-            last_pixel.0 as f32*ps as f32,
-            last_pixel.1 as f32*ps as f32,
+            (last_pixel.0 + 1) as f32 * ps as f32,
+            last_pixel.1 as f32 * ps as f32,
             ps as f32,
             ps as f32,
             GRAY
         );
     }
-    for x in 0..=last_pixel.0 {
+    
+    // Draw a line on the bottom of the screen
+    for x in 0..=last_pixel.0+1 {
         draw_rectangle(
             x as f32*ps as f32,
             (last_pixel.1 + 1) as f32*ps as f32,
@@ -135,7 +147,15 @@ fn debug_windows(
             }
             ui.same_line(0.0);
             if ui.button(None, "Restart") {
-                *chip8_state = create_chip8_from_args(args).unwrap();
+                match args.create_chip8() {
+                    Ok(state) => {
+                        *chip8_state = state;
+                    },
+                    Err(e) => {
+                        eprintln!("Unexpected error: {}.\nQuitting...", e);
+                        std::process::exit(1);
+                    }
+                }
             }
 
             ui.separator();
@@ -249,82 +269,98 @@ fn debug_windows(
 async fn main_loop(chip8_state: &mut Chip8State, args: &Args) {
     let mut screen_timer = SystemTime::now();
     let mut timer_timer = SystemTime::now();
+    // Later used so the excess in case when time_diff > 0 (instead of
+    // timer_diff == 0) doesn't go to waste
+    let mut screen_excess = 0.0;
+    let mut timer_excess = 0.0;
 
     let sound = load_sound("./sound.ogg").await;
     if let Err(e) = &sound {
         eprintln!("Error while loading sound file: {}", e);
     }
 
-    // input values for the interface
+    // Input variables for the debug windows
     let mut steps = String::new();
     let mut breakpoint_addr = String::new();
     let mut multiplier = String::new();
+    // So called main execution loop
     loop {
+        // Hanlde input
         handle_input(chip8_state);
+
+        // Handle all timers
+        // Sound timer
         if chip8_state.sound_timer > 0 {
             if let Ok(sound) = sound {
                 play_sound_once(sound);
             }
         }
-
+        // Update inner CHIP-8 timers every 1/60 second as defined in
+        // the technical reference
         match timer_timer.elapsed() {
             Ok(elapsed) => {
-                if elapsed.as_millis() as f64 > (1000.0 / 60.0 / chip8_state.time_multiplier) {
+                let secs = elapsed.as_secs_f64();
+                let time_diff = secs + timer_excess - (1.0 / 60.0 / chip8_state.time_multiplier);
+                if time_diff >= 0.0 {
                     if chip8_state.delay_timer != 0 {
                         chip8_state.delay_timer -= 1;
                     }
                     if chip8_state.sound_timer != 0 {
                         chip8_state.sound_timer -= 1;
                     }
+                    timer_excess = time_diff;
                     timer_timer = SystemTime::now();
                 }
             }
             Err(e) => {
-                eprintln!("Error: {e:?}");
+                eprintln!("Timer's timer error: {e:?}");
             }
         }
-
+        
+        // Update screen every 1/60 second so we have 60 fps. Not
+        // defined in the technical reference
         match screen_timer.elapsed() {
             Ok(elapsed) => {
-                if elapsed.as_millis() > 1000/60 {
-                    // drawing
+                let secs = elapsed.as_secs_f64();
+                let time_diff = secs + screen_excess - (1.0 / 60.0);
+                if time_diff >= 0.0 {
                     draw_screen(chip8_state, args.pixel_size as usize);
                     if args.debug_mode {
-                        debug_windows(chip8_state, &mut steps, &mut breakpoint_addr, &mut multiplier, args);
+                        debug_windows(
+                            chip8_state,
+                            &mut steps,
+                            &mut breakpoint_addr,
+                            &mut multiplier,
+                            args
+                        );
                     }
                     next_frame().await;
-
+                    screen_excess = time_diff;
                     screen_timer = SystemTime::now();
                 }
             }
             Err(e) => {
-                eprintln!("Error: {e:?}");
+                eprintln!("Screen's timer error: {e:?}");
             }
         }
-        // handle emulation
+        
+        // Handle emulation
         chip8_state.emulate_instruction();
 
-        let to_sleep = time::Duration::from_micros((2000.0/chip8_state.time_multiplier) as u64);
-
+        // CHIP-8 doesn't really have a set cpu frequency but
+        // according to a random reddit post some ROMs might be
+        // frequency sensitive, so a cpu clock around 2000hz seems
+        // like a nice middleground
+        // https://www.reddit.com/r/EmuDev/comments/gvmk12/comment/fsq9p8a/
+        let to_sleep = time::Duration::from_secs_f64(1.0/2000.0/chip8_state.time_multiplier);
         thread::sleep(to_sleep);
     }
-}
-
-fn create_chip8_from_args(args: &Args) -> Result<Chip8State, Box<dyn Error>> {
-    let mut file = File::open(&args.file)?;
-    let mut memory = vec![0u8; 0x200];
-    let mut contents = Vec::<u8>::new();
-    file.read_to_end(&mut contents)?;
-    memory.append(&mut contents);
-    let mut chip8_state = Chip8State::from_memory(memory);
-    chip8_state.pc = args.start;
-    Ok(chip8_state)
 }
 
 #[macroquad::main("yayachip8rsemu")]
 async fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
-    let mut chip8_state = create_chip8_from_args(&args)?;
+    let mut chip8_state = args.create_chip8()?;
 
     main_loop(&mut chip8_state, &args).await;
 

@@ -34,7 +34,6 @@ pub struct Chip8State {
     pub delay_timer: u8,
     pub sound_timer: u8,
     pub screen: [[bool; 64]; 32],
-    pub keypress_halt: bool,
     pub keypress_reg: u8,
     pub stop: bool,
     pub steps_to_stop: u16,
@@ -60,7 +59,6 @@ impl Chip8State {
             delay_timer: 0,
             sound_timer: 0,
             screen: [[false; 64]; 32],
-            keypress_halt: false,
             keypress_reg: 0,
             stop: false,
             steps_to_stop: 0,
@@ -80,7 +78,6 @@ impl Chip8State {
             delay_timer: 0,
             sound_timer: 0,
             screen: [[false; 64]; 32],
-            keypress_halt: false,
             keypress_reg: 0,
             stop: false,
             steps_to_stop: 0,
@@ -114,6 +111,8 @@ impl Chip8State {
         }
     }
 
+    /// Get information about registers as a String. Used for
+    /// debugging purposes
     pub fn get_state_string(&self) -> String {
         let mut state_str = String::new();
         state_str += &format!("pc: {0:}\n", self.pc);
@@ -127,6 +126,8 @@ impl Chip8State {
         state_str
     }
 
+    /// Get dissassembly instructions as a String near the instruction
+    /// pointer. Used for debugging purposes
     pub fn get_disassembly_string(&self) -> String {
         let mut disasm_str = String::new();
         for i in (-6..=18).step_by(2) {
@@ -159,7 +160,7 @@ impl Chip8State {
     }
 
     pub fn emulate_instruction(&mut self) {
-        if !self.keypress_halt && !self.stop {
+        if !self.stop {
             self.execute_instruction();
 
             if self.steps_to_stop > 0 {
@@ -256,6 +257,10 @@ impl Chip8State {
         }
     }
 
+    // Below you can see functions corresponding to the various
+    // instructions. Made based on the opcode table from:
+    // https://en.wikipedia.org/wiki/CHIP-8#Opcode_table
+    
     // 0NNN
     pub fn call_rca1802_code_routine(&mut self, inst: u16) {
         assert_eq!((inst & 0xf000) >> 12, 0);
@@ -416,7 +421,7 @@ impl Chip8State {
         assert_eq!(inst & 0x000f, 6);
         let x = ((inst & 0x0f00) >> 8) as usize;
         // So the order of operations is correct when performing operations
-        // on the 0xf register.
+        // on the 0xf register
         let tmp = self.reg[x] & 0x01;
         self.reg[x] >>= 1;
         self.reg[0xf] = tmp;
@@ -440,7 +445,7 @@ impl Chip8State {
         assert_eq!((inst & 0xf000) >> 12, 8);
         assert_eq!(inst & 0x000f, 0xe);
         let x = ((inst & 0x0f00) >> 8) as usize;
-        // See comment on 8XY6.
+        // See comment on 8XY6
         let tmp = (self.reg[x] & 0x80) >> 7;
         self.reg[x] <<= 1;
         self.reg[0xf] = tmp;
@@ -549,7 +554,6 @@ impl Chip8State {
         assert_eq!((inst & 0xf000) >> 12, 0xf);
         assert_eq!(inst & 0x00ff, 0x0a);
         let x = ((inst & 0x0f00) >> 8) as usize;
-        self.keypress_halt = true;
         self.keypress_reg = x as u8;
         self.pc += 2;
     }

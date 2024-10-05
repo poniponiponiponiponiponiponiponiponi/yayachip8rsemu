@@ -17,7 +17,7 @@ struct Args {
    #[arg(short, long)]
    file: String,
 
-   /// File offset
+   /// File offset to start at
    #[arg(short, long, action, default_value_t = 0)]
    start: usize,
 
@@ -26,22 +26,14 @@ struct Args {
    instruction_amount: usize,
 }
 
-#[cfg(unix)]
-fn reset_sigpipe() {
+fn main() -> Result<(), Box<dyn Error>> {
+    // https://github.com/rust-lang/rust/issues/46016
+    #[cfg(unix)]
     unsafe {
         libc::signal(libc::SIGPIPE, libc::SIG_DFL);
     }
-}
-
-#[cfg(not(unix))]
-fn reset_sigpipe() {
-    // no-op
-}
-
-fn main() -> Result<(), Box<dyn Error>> {
-    reset_sigpipe();
+    
     let args = Args::parse();
-
     let mut file = File::open(args.file)?;
     let mut contents = Vec::<u8>::new();
     file.read_to_end(&mut contents)?;
@@ -52,6 +44,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         if instructions_printed == args.instruction_amount {
             break;
         }
+        // Handle edge case when the file size is not even
         if i+1 == contents.len() {
             break;
         }

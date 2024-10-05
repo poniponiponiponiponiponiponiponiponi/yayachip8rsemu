@@ -182,6 +182,10 @@ fn find_instruction_func(inst: u16) -> fn(u16) -> Instruction {
     }
 }
 
+// Below you can see functions corresponding to the various
+// instructions. Made based on the opcode table from:
+// https://en.wikipedia.org/wiki/CHIP-8#Opcode_table
+
 // 0NNN
 fn call_rca1802_code_routine(inst: u16) -> Instruction {
     assert_eq!(inst & 0xf000, 0x0000);
