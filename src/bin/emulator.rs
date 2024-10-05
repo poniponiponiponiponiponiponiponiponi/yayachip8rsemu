@@ -5,7 +5,7 @@ use std::io::prelude::*;
 use yayachip8rsemu::state::Chip8State;
 use macroquad::prelude::*;
 use macroquad::ui::{hash, root_ui, widgets, Ui};
-use macroquad::audio::{load_sound, play_sound_once, PlaySoundParams};
+use macroquad::audio::{load_sound, play_sound_once};
 use std::time::SystemTime;
 use std::{thread, time};
 
@@ -251,8 +251,8 @@ async fn main_loop(chip8_state: &mut Chip8State, args: &Args) {
     let mut timer_timer = SystemTime::now();
 
     let sound = load_sound("./sound.ogg").await;
-    if let Err(_) = sound {
-        eprintln!("Error while loading sound file");
+    if let Err(e) = &sound {
+        eprintln!("Error while loading sound file: {}", e);
     }
 
     // input values for the interface
@@ -269,7 +269,7 @@ async fn main_loop(chip8_state: &mut Chip8State, args: &Args) {
 
         match timer_timer.elapsed() {
             Ok(elapsed) => {
-                if elapsed.as_millis() > (1000 as f64/60 as f64/chip8_state.time_multiplier) as u128 {
+                if elapsed.as_millis() as f64 > (1000.0 / 60.0 / chip8_state.time_multiplier) {
                     if chip8_state.delay_timer != 0 {
                         chip8_state.delay_timer -= 1;
                     }

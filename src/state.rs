@@ -18,7 +18,7 @@ impl Breakpoint {
 
 impl cmp::PartialEq for Breakpoint {
     fn eq(&self, other: &Self) -> bool {
-        return self.addr == other.addr;
+        self.addr == other.addr
     }
 }
 
