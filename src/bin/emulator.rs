@@ -1,20 +1,18 @@
-use clap::Parser;
-use std::error::Error;
-use std::fs::File;
-use std::io::prelude::*;
-use std::io::Result as IoResult;
 use yayachip8rsemu::state::Chip8State;
+use yayachip8rsemu::args::Args;
+use yayachip8rsemu::debug;
+use clap::Parser;
 use macroquad::prelude::*;
-use macroquad::ui::{hash, root_ui, widgets, Ui};
 use macroquad::audio::{load_sound, play_sound_once};
 use std::time::SystemTime;
 use std::{thread, time};
+use std::error::Error;
 
 #[derive(Parser, Debug)]
 #[command(author = "poni <poniponiponiponiponiponiponiponiponiponi@protonmail.com>")]
 #[command(about = "yayachip8rsemu", long_about = None)]
 #[command(version)]
-struct Args {
+struct Cli {
     /// ROM to run
     #[arg(short, long)]
     file: String,
@@ -40,16 +38,16 @@ struct Args {
     debug_mode: bool,
 }
 
-impl Args {
-    fn create_chip8(&self) -> IoResult<Chip8State> {
-        let mut file = File::open(&self.file)?;
-        let mut memory = vec![0u8; 0x200];
-        let mut contents = Vec::<u8>::new();
-        file.read_to_end(&mut contents)?;
-        memory.append(&mut contents);
-        let mut chip8_state = Chip8State::from_memory(memory);
-        chip8_state.pc = self.start;
-        Ok(chip8_state)
+impl Cli {
+    fn to_args(&self) -> Args {
+        Args {
+            file: self.file.clone(),
+            offset: self.offset,
+            start: self.start,
+            pixel_size: self.pixel_size,
+            stop: self.stop,
+            debug_mode: self.debug_mode,
+        }
     }
 }
 
@@ -80,12 +78,6 @@ fn handle_input(chip8_state: &mut Chip8State) {
             chip8_state.reg[chip8_state.keypress_reg as usize] = chip8_key as u8;
         }
         chip8_state.key_pressed[chip8_key] = is_pressed;
-    }
-}
-
-fn print_ui_text(ui: &mut Ui, str: String) {
-    for line in str.lines() {
-        ui.label(None, line);
     }
 }
 
@@ -127,166 +119,6 @@ fn draw_screen(chip8_state: &mut Chip8State, ps: usize) {
             GRAY
         );
     }
-}
-
-fn debug_windows(chip8_state: &mut Chip8State,
-                 snapshots: &mut Vec<Chip8State>,
-                 steps: &mut String,
-                 breakpoint_addr: &mut String,
-                 multiplier: &mut String,
-                 args: &Args) {
-    widgets::Window::new(hash!(), vec2(0., 50.), vec2(200., 300.))
-        .label("Debug")
-        .ui(&mut root_ui(), |ui| {
-            if ui.button(None, "Stop") {
-                chip8_state.stop_execution();
-            }
-            ui.same_line(0.0);
-            if ui.button(None, "Continue") {
-                chip8_state.continue_execution();
-            }
-            ui.same_line(0.0);
-            if ui.button(None, "Restart") {
-                match args.create_chip8() {
-                    Ok(state) => {
-                        *chip8_state = state;
-                    },
-                    Err(e) => {
-                        eprintln!("Unexpected error: {}.\nQuitting...", e);
-                        std::process::exit(1);
-                    }
-                }
-            }
-
-            ui.separator();
-            ui.tree_node(hash!(), "Step", |ui| {
-                if ui.button(None, "Step 1") {
-                    chip8_state.step(1);
-                }
-                ui.same_line(0.0);
-                if ui.button(None, "Step 10") {
-                    chip8_state.step(10);
-                }
-                ui.same_line(0.0);
-                if ui.button(None, "Step 100") {
-                    chip8_state.step(100);
-                }
-                ui.separator();
-                ui.label(None, "Make X amount of steps: ");
-                ui.input_text(hash!(), "< --", steps);
-                ui.separator();
-                if ui.button(None, "Step X") {
-                    let steps = steps.parse::<u16>();
-                    if let Ok(steps) = steps {
-                        chip8_state.step(steps);
-                    } else {
-                        eprintln!("steps is not a number");
-                    }
-                }
-            });
-
-            ui.separator();
-            ui.tree_node(hash!(), "Breakpoints", |ui| {
-                ui.label(None, "Breakpoint address: ");
-                ui.input_text(hash!(), "< --", breakpoint_addr);
-                ui.separator();
-                if ui.button(None, "Add breakpoint") {
-                    let breakpoint_addr = breakpoint_addr.parse::<u16>();
-                    if let Ok(breakpoint_addr) = breakpoint_addr {
-                        chip8_state.add_breakpoint(breakpoint_addr);
-                    } else {
-                        eprintln!("breakpoint address is not an address");
-                    }
-                }
-                ui.separator();
-                ui.label(None, "Breakpoints: ");
-
-                let mut to_remove = Vec::new();
-                for (i, bp) in chip8_state.breakpoints.iter().enumerate() {
-                    ui.label(None, &format!("{i:2}: {:#06x}", bp.addr));
-                    ui.same_line(0.0);
-                    if ui.button(None, "Remove") {
-                        let idx = chip8_state.breakpoints
-                            .iter()
-                            .position(|x| x == bp)
-                            .unwrap();
-                        to_remove.push(idx);
-                    }
-                    ui.separator();
-                }
-                to_remove.sort();
-                to_remove.reverse();
-                for idx in to_remove {
-                    chip8_state.breakpoints.remove(idx);
-                }
-            });
-
-            ui.separator();
-            ui.tree_node(hash!(), "Speedhacks", |ui| {
-                if ui.button(None, "0.25x") {
-                    chip8_state.time_multiplier = 0.25;
-                }
-                ui.same_line(0.0);
-                if ui.button(None, "1x   ") {
-                    chip8_state.time_multiplier = 1.0;
-                }
-                ui.same_line(0.0);
-                if ui.button(None, "2x   ") {
-                    chip8_state.time_multiplier = 2.0;
-                }
-                ui.same_line(0.0);
-                if ui.button(None, "4x   ") {
-                    chip8_state.time_multiplier = 4.0;
-                }
-                ui.separator();
-                ui.label(None, "Custom time multiplier: ");
-                ui.input_text(hash!(), "< --", multiplier);
-                ui.separator();
-                if ui.button(None, "Apply") {
-                    let multiplier = multiplier.parse::<f64>();
-                    if let Ok(multiplier) = multiplier {
-                        chip8_state.time_multiplier = multiplier;
-                    } else {
-                        eprintln!("Multiplier is not a number");
-                    }
-                }
-            });
-
-            ui.tree_node(hash!(), "Snapshots", |ui| {
-                if ui.button(None, "Add snapshot") {
-                    snapshots.push(chip8_state.clone());
-                }
-                ui.separator();
-                ui.label(None, "Snapshots: ");
-                
-                for i in 0..snapshots.len() {
-                    ui.label(None, &format!("{:2}", i));
-                    ui.same_line(0.0);
-                    if ui.button(None, "Remove") {
-                        snapshots.remove(i);
-                        break;
-                    }
-                    ui.same_line(0.0);
-                    if ui.button(None, "Load") {
-                        *chip8_state = snapshots[i].clone();
-                        break;
-                    }
-                    ui.separator();
-                }
-            });
-        });
-
-    widgets::Window::new(hash!(), vec2(300., 50.), vec2(250., 300.))
-        .label("State")
-        .ui(&mut root_ui(), |ui| {
-            print_ui_text(ui, chip8_state.get_state_string());
-        });
-
-    widgets::Window::new(hash!(), vec2(600., 50.), vec2(300., 300.))
-        .label("Disassembly")
-        .ui(&mut root_ui(), |ui| {
-            print_ui_text(ui, chip8_state.get_disassembly_string());
-        });
 }
 
 async fn main_loop(chip8_state: &mut Chip8State, args: &Args) {
@@ -350,7 +182,7 @@ async fn main_loop(chip8_state: &mut Chip8State, args: &Args) {
                 if time_diff >= 0.0 {
                     draw_screen(chip8_state, args.pixel_size as usize);
                     if args.debug_mode {
-                        debug_windows(
+                        debug::debug_windows(
                             chip8_state,
                             &mut snapshots,
                             &mut steps,
@@ -384,7 +216,8 @@ async fn main_loop(chip8_state: &mut Chip8State, args: &Args) {
 
 #[macroquad::main("yayachip8rsemu")]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let args = Args::parse();
+    let cli = Cli::parse();
+    let args = cli.to_args();
     let mut chip8_state = args.create_chip8()?;
 
     main_loop(&mut chip8_state, &args).await;
