@@ -4,6 +4,7 @@ use crate::stack::Stack;
 use crate::memory::Memory;
 use rand::Rng;
 
+#[derive(Clone)]
 pub struct Breakpoint {
     pub addr: u16,
 }
@@ -22,6 +23,7 @@ impl cmp::PartialEq for Breakpoint {
     }
 }
 
+#[derive(Clone)]
 pub struct Chip8State {
     pub pc: u16,
     // V0 to VF

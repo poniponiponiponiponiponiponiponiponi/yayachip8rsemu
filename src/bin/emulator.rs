@@ -129,12 +129,12 @@ fn draw_screen(chip8_state: &mut Chip8State, ps: usize) {
     }
 }
 
-fn debug_windows(
-        chip8_state: &mut Chip8State,
-        steps: &mut String,
-        breakpoint_addr: &mut String,
-        multiplier: &mut String,
-        args: &Args) {
+fn debug_windows(chip8_state: &mut Chip8State,
+                 snapshots: &mut Vec<Chip8State>,
+                 steps: &mut String,
+                 breakpoint_addr: &mut String,
+                 multiplier: &mut String,
+                 args: &Args) {
     widgets::Window::new(hash!(), vec2(0., 50.), vec2(200., 300.))
         .label("Debug")
         .ui(&mut root_ui(), |ui| {
@@ -251,6 +251,29 @@ fn debug_windows(
                     }
                 }
             });
+
+            ui.tree_node(hash!(), "Snapshots", |ui| {
+                if ui.button(None, "Add snapshot") {
+                    snapshots.push(chip8_state.clone());
+                }
+                ui.separator();
+                ui.label(None, "Snapshots: ");
+                
+                for i in 0..snapshots.len() {
+                    ui.label(None, &format!("{:2}", i));
+                    ui.same_line(0.0);
+                    if ui.button(None, "Remove") {
+                        snapshots.remove(i);
+                        break;
+                    }
+                    ui.same_line(0.0);
+                    if ui.button(None, "Load") {
+                        *chip8_state = snapshots[i].clone();
+                        break;
+                    }
+                    ui.separator();
+                }
+            });
         });
 
     widgets::Window::new(hash!(), vec2(300., 50.), vec2(250., 300.))
@@ -279,10 +302,11 @@ async fn main_loop(chip8_state: &mut Chip8State, args: &Args) {
         eprintln!("Error while loading sound file: {}", e);
     }
 
-    // Input variables for the debug windows
+    // Variables for the debug windows
     let mut steps = String::new();
     let mut breakpoint_addr = String::new();
     let mut multiplier = String::new();
+    let mut snapshots = Vec::new();
     // So called main execution loop
     loop {
         // Hanlde input
@@ -328,6 +352,7 @@ async fn main_loop(chip8_state: &mut Chip8State, args: &Args) {
                     if args.debug_mode {
                         debug_windows(
                             chip8_state,
+                            &mut snapshots,
                             &mut steps,
                             &mut breakpoint_addr,
                             &mut multiplier,

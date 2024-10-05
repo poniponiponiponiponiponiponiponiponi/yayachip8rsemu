@@ -1,3 +1,4 @@
+#[derive(Clone)]
 pub struct Stack {
     sp: usize,
     stack: [u16; 16],

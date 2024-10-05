@@ -3,6 +3,7 @@ use core::fmt::Display;
 use std::ops::Shl;
 use std::ops::BitOr;
 
+#[derive(Clone)]
 pub struct Memory {
     pub memory: [u8; 4096],
 }
