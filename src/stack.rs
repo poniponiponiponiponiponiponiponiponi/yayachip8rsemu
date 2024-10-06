@@ -11,8 +11,8 @@ impl Default for Stack {
 }
 
 impl Stack {
-    pub fn new() -> Stack {
-        Stack {
+    pub fn new() -> Self {
+        Self {
             sp: 0,
             stack: [0u16; 16],
         }

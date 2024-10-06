@@ -10,8 +10,8 @@ pub struct Breakpoint {
 }
 
 impl Breakpoint {
-    pub fn new(addr: u16) -> Breakpoint {
-        Breakpoint {
+    pub fn new(addr: u16) -> Self {
+        Self {
             addr
         }
     }
@@ -45,6 +45,28 @@ impl QuirksConfig {
             jumping: false,
         }
     }
+
+    pub fn get_xo_chip() -> Self {
+        Self {
+            vf_reset: false,
+            memory: true,
+            display_wait: false,
+            clipping: false,
+            shifting: false,
+            jumping: false,
+        }
+    }
+
+    pub fn get_super_chip() -> Self {
+        Self {
+            vf_reset: false,
+            memory: false,
+            display_wait: false,
+            clipping: true,
+            shifting: true,
+            jumping: true,
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -70,13 +92,13 @@ pub struct Chip8State {
 
 impl Default for Chip8State {
     fn default() -> Self {
-        Self::new()
+        Self::new(QuirksConfig::get_chip8())
     }
 }
 
 impl Chip8State {
-    pub fn new() -> Chip8State {
-        Chip8State {
+    pub fn new(quirks_cofig: QuirksConfig) -> Self {
+        Self {
             pc: 0,
             reg: [0; 16],
             key_pressed: [false; 16],
@@ -91,12 +113,12 @@ impl Chip8State {
             steps_to_stop: 0,
             breakpoints: Vec::new(),
             time_multiplier: 1.0,
-            quirks_config: QuirksConfig::get_chip8(),
+            quirks_config: quirks_cofig,
         }
     }
 
-    pub fn from_memory(memory: Vec<u8>) -> Chip8State {
-        Chip8State {
+    pub fn from_memory(quirks_cofig: QuirksConfig, memory: Vec<u8>) -> Self {
+        Self {
             pc: 0,
             reg: [0; 16],
             key_pressed: [false; 16],
@@ -111,7 +133,7 @@ impl Chip8State {
             steps_to_stop: 0,
             breakpoints: Vec::new(),
             time_multiplier: 1.0,
-            quirks_config: QuirksConfig::get_chip8(),
+            quirks_config: quirks_cofig,
         }
     }
 
@@ -207,85 +229,85 @@ impl Chip8State {
         let inst = self.memory.read(self.pc as usize, 2);
         let bytes = [inst[0], inst[1]];
         let inst = u16::from_be_bytes(bytes);
-        Chip8State::find_instruction_func(self, inst)(self, inst);
+        Self::find_instruction_func(self, inst)(self, inst);
     }
 
-    pub fn find_instruction_func(&self, inst: u16) -> fn(&mut Chip8State, u16) {
+    pub fn find_instruction_func(&self, inst: u16) -> fn(&mut Self, u16) {
         if inst == 0x00e0 {
-            Chip8State::clear_display
+            Self::clear_display
         } else if inst == 0x00ee {
-            Chip8State::return_from_subroutine
+            Self::return_from_subroutine
         } else if inst & 0xf000 == 0x0000 {
-            Chip8State::call_rca1802_code_routine
+            Self::call_rca1802_code_routine
         } else if inst & 0xf000 == 0x1000 {
-            Chip8State::jmp
+            Self::jmp
         } else if inst & 0xf000 == 0x2000 {
-            Chip8State::call
+            Self::call
         } else if inst & 0xf000 == 0x3000 {
-            Chip8State::skip_eq
+            Self::skip_eq
         } else if inst & 0xf000 == 0x4000 {
-            Chip8State::skip_neq
+            Self::skip_neq
         } else if inst & 0xf000 == 0x5000 && inst & 0x000f == 0x0 {
-            Chip8State::skip_regs_eq
+            Self::skip_regs_eq
         } else if inst & 0xf000 == 0x6000 {
-            Chip8State::set_val
+            Self::set_val
         } else if inst & 0xf000 == 0x7000 {
-            Chip8State::add_val
+            Self::add_val
         } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x0 {
-            Chip8State::set_reg
+            Self::set_reg
         } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x1 {
-            Chip8State::or_reg
+            Self::or_reg
         } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x2 {
-            Chip8State::and_reg
+            Self::and_reg
         } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x3 {
-            Chip8State::xor_reg
+            Self::xor_reg
         } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x4 {
-            Chip8State::add_reg
+            Self::add_reg
         } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x5 {
-            Chip8State::sub_reg
+            Self::sub_reg
         } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x6 {
-            Chip8State::rsh_reg
+            Self::rsh_reg
         } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0x7 {
-            Chip8State::reverse_sub_reg
+            Self::reverse_sub_reg
         } else if inst & 0xf000 == 0x8000 && inst & 0x000f == 0xe {
-            Chip8State::lsh_reg
+            Self::lsh_reg
         } else if inst & 0xf000 == 0x9000 && inst & 0x000f == 0x0 {
-            Chip8State::skip_regs_neq
+            Self::skip_regs_neq
         } else if inst & 0xf000 == 0xa000 {
-            Chip8State::set_addr
+            Self::set_addr
         } else if inst & 0xf000 == 0xb000 {
             if self.quirks_config.jumping {
                 // https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#bnnn-jump-with-offset
-                Chip8State::jmp_plus_xnn
+                Self::jmp_plus_xnn
             } else {
-                Chip8State::jmp_plus
+                Self::jmp_plus
             }
         } else if inst & 0xf000 == 0xc000 {
-            Chip8State::rand
+            Self::rand
         } else if inst & 0xf000 == 0xd000 {
-            Chip8State::draw
+            Self::draw
         } else if inst & 0xf000 == 0xe000 && inst & 0x00ff == 0x9e {
-            Chip8State::skip_if_pressed
+            Self::skip_if_pressed
         } else if inst & 0xf000 == 0xe000 && inst & 0x00ff == 0xa1 {
-            Chip8State::skip_if_not_pressed
+            Self::skip_if_not_pressed
         } else if inst & 0xf000 == 0xf000 && inst & 0x00ff == 0x07 {
-            Chip8State::get_delay_timer
+            Self::get_delay_timer
         } else if inst & 0xf000 == 0xf000 && inst & 0x00ff == 0x0a {
-            Chip8State::get_keypress
+            Self::get_keypress
         } else if inst & 0xf000 == 0xf000 && inst & 0x00ff == 0x15 {
-            Chip8State::set_delay_timer
+            Self::set_delay_timer
         } else if inst & 0xf000 == 0xf000 && inst & 0x00ff == 0x18 {
-            Chip8State::set_sound_timer
+            Self::set_sound_timer
         } else if inst & 0xf000 == 0xf000 && inst & 0x00ff == 0x1e {
-            Chip8State::add_to_addr
+            Self::add_to_addr
         } else if inst & 0xf000 == 0xf000 && inst & 0x00ff == 0x29 {
-            Chip8State::set_addr_to_sprite_addr
+            Self::set_addr_to_sprite_addr
         } else if inst & 0xf000 == 0xf000 && inst & 0x00ff == 0x33 {
-            Chip8State::store_bcd
+            Self::store_bcd
         } else if inst & 0xf000 == 0xf000 && inst & 0x00ff == 0x55 {
-            Chip8State::reg_dump
+            Self::reg_dump
         } else if inst & 0xf000 == 0xf000 && inst & 0x00ff == 0x65 {
-            Chip8State::reg_load
+            Self::reg_load
         } else {
             panic!("bad instruction {:04x}", inst);
         }

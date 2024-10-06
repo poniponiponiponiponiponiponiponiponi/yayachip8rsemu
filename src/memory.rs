@@ -15,14 +15,14 @@ impl Default for Memory {
 }
 
 impl Memory {
-    pub fn new() -> Memory {
-        Memory {
+    pub fn new() -> Self {
+        Self {
             memory: [0; 4096],
         }
     }
 
-    pub fn from_vec(vec: Vec::<u8>) -> Memory {
-        let mut memory = Memory::new();
+    pub fn from_vec(vec: Vec::<u8>) -> Self {
+        let mut memory = Self::new();
         for (i, &byte) in vec.iter().enumerate() {
             memory.memory[i] = byte;
         }

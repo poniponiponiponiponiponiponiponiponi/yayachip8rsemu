@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::Result as IoResult;
-use crate::state::Chip8State;
+use crate::state::{Chip8State, QuirksConfig};
 
 pub struct Args {
     pub file: String,
@@ -10,6 +10,7 @@ pub struct Args {
     pub pixel_size: i32,
     pub stop: bool,
     pub debug_mode: bool,
+    pub quirks_config: QuirksConfig
 }
 
 impl Args {
@@ -19,7 +20,7 @@ impl Args {
         let mut contents = Vec::<u8>::new();
         file.read_to_end(&mut contents)?;
         memory.append(&mut contents);
-        let mut chip8_state = Chip8State::from_memory(memory);
+        let mut chip8_state = Chip8State::from_memory(self.quirks_config.clone(), memory);
         chip8_state.pc = self.start;
         Ok(chip8_state)
     }

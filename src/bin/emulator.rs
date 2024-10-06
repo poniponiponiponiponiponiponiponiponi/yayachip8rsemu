@@ -1,7 +1,7 @@
-use yayachip8rsemu::state::Chip8State;
+use yayachip8rsemu::state::{Chip8State, QuirksConfig};
 use yayachip8rsemu::args::Args;
 use yayachip8rsemu::debug;
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use macroquad::prelude::*;
 use macroquad::audio::{load_sound, play_sound_once};
 use std::time::SystemTime;
@@ -17,25 +17,36 @@ struct Cli {
     #[arg(short, long)]
     file: String,
 
-    /// Offset where to load the binary image in the Chip8 address space
-    #[arg(short, long, action, default_value_t = 0x200)]
+    /// Offset where to load the binary image in the CHIP-8 address space
+    #[arg(short, long, default_value_t = 0x200)]
     offset: u16,
 
     /// Start address of the execution
-    #[arg(long, action, default_value_t = 0x200)]
+    #[arg(long, default_value_t = 0x200)]
     start: u16,
 
     /// Pixel size
-    #[arg(short, long, action, default_value_t = 16)]
+    #[arg(short, long, default_value_t = 16)]
     pixel_size: i32,
 
     /// Start with stopped execution
-    #[arg(short, long, action, default_value_t = false)]
+    #[arg(short, long, default_value_t = false)]
     stop: bool,
 
     /// Debug mode. Draw special debug windows
-    #[arg(short, long, action, default_value_t = false)]
+    #[arg(short, long, default_value_t = false)]
     debug_mode: bool,
+
+    /// Pick quirks
+    #[arg(value_enum, short, long, default_value_t = Chip8Quirks::Chip8)]
+    quirks: Chip8Quirks
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
+enum Chip8Quirks {
+    Chip8,
+    SuperChip,
+    XoChip
 }
 
 impl Cli {
@@ -47,6 +58,17 @@ impl Cli {
             pixel_size: self.pixel_size,
             stop: self.stop,
             debug_mode: self.debug_mode,
+            quirks_config: match self.quirks {
+                Chip8Quirks::Chip8 => {
+                    QuirksConfig::get_chip8()
+                },
+                Chip8Quirks::XoChip => {
+                    QuirksConfig::get_xo_chip()
+                },
+                Chip8Quirks::SuperChip => {
+                    QuirksConfig::get_super_chip()
+                }
+            }
         }
     }
 }
@@ -206,10 +228,10 @@ async fn main_loop(chip8_state: &mut Chip8State, args: &Args) {
 
         // CHIP-8 doesn't really have a set cpu frequency but
         // according to a random reddit post some ROMs might be
-        // frequency sensitive, so a cpu clock around 2000hz seems
+        // frequency sensitive, so a cpu clock around 1000hz seems
         // like a nice middleground
         // https://www.reddit.com/r/EmuDev/comments/gvmk12/comment/fsq9p8a/
-        let to_sleep = time::Duration::from_secs_f64(1.0/2000.0/chip8_state.time_multiplier);
+        let to_sleep = time::Duration::from_secs_f64(1.0/1000.0/chip8_state.time_multiplier);
         thread::sleep(to_sleep);
     }
 }

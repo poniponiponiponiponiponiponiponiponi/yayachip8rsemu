@@ -10,7 +10,7 @@ use yayachip8rsemu::disasm;
 #[command(version)]
 struct Args {
    /// Print verbose information
-   #[arg(short, long, action, default_value_t = false)]
+   #[arg(short, long, default_value_t = false)]
    verbose: bool,
 
    /// File to disassemble
@@ -18,11 +18,11 @@ struct Args {
    file: String,
 
    /// File offset to start at
-   #[arg(short, long, action, default_value_t = 0)]
+   #[arg(short, long, default_value_t = 0)]
    start: usize,
 
    /// Amount of instruction to print. Zero means to the end
-   #[arg(short, long, action, default_value_t = 0)]
+   #[arg(short, long, default_value_t = 0)]
    instruction_amount: usize,
 }
 

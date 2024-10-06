@@ -4,16 +4,18 @@
 
 Yet another `yet another chip8 rust emulator` that I created for fun,
 because there aren't enough of them already. Well to be precise I used
-the word emulator because it's a popular thing in the EmuDev community
-but it's an interpreter since a CHIP-8 CPU doesn't exist. If you're
-writing a CHIP-8 interpreter on your own this project might be useful
-for you to compare it with your implementation when you will come
-across a bug or something, especially since I put some focus on having
-a good disassembly, debugger, etc.
+the word `emulator` because it's a popular thing in the EmuDev
+community but it's an interpreter since a CHIP-8 CPU doesn't exist. If
+you're writing a CHIP-8 interpreter on your own this project might be
+useful for you to compare it with your implementation when you will
+come across a bug or something, especially since I put some focus on
+having a good disassembly, debugger, etc.
 
 ## Features
 - A simple debugger
 - Disassembler
+- Speedhacks
+- Quirks implementation
 - "Time travel" through snapshots
 
 ## How to run
@@ -50,4 +52,4 @@ The keyboard mapping is hardcoded in the code:
 
 ## TODO
 TODO:
-- add an option to choose implementation quirks (https://github.com/Timendus/chip8-test-suite#quirks-test)
+- Display time quirk is not implemented yet
