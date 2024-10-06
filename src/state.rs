@@ -23,6 +23,30 @@ impl cmp::PartialEq for Breakpoint {
     }
 }
 
+/// https://github.com/Timendus/chip8-test-suite?tab=readme-ov-file#quirks-test
+#[derive(Clone)]
+pub struct QuirksConfig {
+    pub vf_reset: bool,
+    pub memory: bool,
+    pub display_wait: bool,
+    pub clipping: bool,
+    pub shifting: bool,
+    pub jumping: bool
+}
+
+impl QuirksConfig {
+    pub fn get_chip8() -> Self {
+        Self {
+            vf_reset: true,
+            memory: true,
+            display_wait: true,
+            clipping: true,
+            shifting: false,
+            jumping: false,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct Chip8State {
     pub pc: u16,
@@ -41,6 +65,7 @@ pub struct Chip8State {
     pub steps_to_stop: u16,
     pub breakpoints: Vec<Breakpoint>,
     pub time_multiplier: f64,
+    pub quirks_config: QuirksConfig,
 }
 
 impl Default for Chip8State {
@@ -66,6 +91,7 @@ impl Chip8State {
             steps_to_stop: 0,
             breakpoints: Vec::new(),
             time_multiplier: 1.0,
+            quirks_config: QuirksConfig::get_chip8(),
         }
     }
 
@@ -85,6 +111,7 @@ impl Chip8State {
             steps_to_stop: 0,
             breakpoints: Vec::new(),
             time_multiplier: 1.0,
+            quirks_config: QuirksConfig::get_chip8(),
         }
     }
 
@@ -180,10 +207,10 @@ impl Chip8State {
         let inst = self.memory.read(self.pc as usize, 2);
         let bytes = [inst[0], inst[1]];
         let inst = u16::from_be_bytes(bytes);
-        Chip8State::find_instruction_func(inst)(self, inst);
+        Chip8State::find_instruction_func(self, inst)(self, inst);
     }
 
-    pub fn find_instruction_func(inst: u16) -> fn(&mut Chip8State, u16) {
+    pub fn find_instruction_func(&self, inst: u16) -> fn(&mut Chip8State, u16) {
         if inst == 0x00e0 {
             Chip8State::clear_display
         } else if inst == 0x00ee {
@@ -227,7 +254,12 @@ impl Chip8State {
         } else if inst & 0xf000 == 0xa000 {
             Chip8State::set_addr
         } else if inst & 0xf000 == 0xb000 {
-            Chip8State::jmp_plus
+            if self.quirks_config.jumping {
+                // https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#bnnn-jump-with-offset
+                Chip8State::jmp_plus_xnn
+            } else {
+                Chip8State::jmp_plus
+            }
         } else if inst & 0xf000 == 0xc000 {
             Chip8State::rand
         } else if inst & 0xf000 == 0xd000 {
@@ -371,6 +403,10 @@ impl Chip8State {
         let y = ((inst & 0x00f0) >> 4) as usize;
         self.reg[x] |= self.reg[y];
         self.pc += 2;
+        
+        if self.quirks_config.vf_reset {
+            self.reg[0xf] = 0;
+        }
     }
 
     // 8XY2
@@ -381,6 +417,10 @@ impl Chip8State {
         let y = ((inst & 0x00f0) >> 4) as usize;
         self.reg[x] &= self.reg[y];
         self.pc += 2;
+        
+        if self.quirks_config.vf_reset {
+            self.reg[0xf] = 0;
+        }
     }
 
     // 8XY3
@@ -391,6 +431,10 @@ impl Chip8State {
         let y = ((inst & 0x00f0) >> 4) as usize;
         self.reg[x] ^= self.reg[y];
         self.pc += 2;
+        
+        if self.quirks_config.vf_reset {
+            self.reg[0xf] = 0;
+        }
     }
 
     // 8XY4
@@ -422,6 +466,10 @@ impl Chip8State {
         assert_eq!((inst & 0xf000) >> 12, 8);
         assert_eq!(inst & 0x000f, 6);
         let x = ((inst & 0x0f00) >> 8) as usize;
+        if !self.quirks_config.shifting {
+            let y = ((inst & 0x00f0) >> 4) as usize;
+            self.reg[x] = self.reg[y];
+        }
         // So the order of operations is correct when performing operations
         // on the 0xf register
         let tmp = self.reg[x] & 0x01;
@@ -447,6 +495,10 @@ impl Chip8State {
         assert_eq!((inst & 0xf000) >> 12, 8);
         assert_eq!(inst & 0x000f, 0xe);
         let x = ((inst & 0x0f00) >> 8) as usize;
+        if !self.quirks_config.shifting {
+            let y = ((inst & 0x00f0) >> 4) as usize;
+            self.reg[x] = self.reg[y];
+        }
         // See comment on 8XY6
         let tmp = (self.reg[x] & 0x80) >> 7;
         self.reg[x] <<= 1;
@@ -481,6 +533,14 @@ impl Chip8State {
         self.pc = nnn + self.reg[0] as u16;
     }
 
+    // BXNN
+    pub fn jmp_plus_xnn(&mut self, inst: u16) {
+        assert_eq!((inst & 0xf000) >> 12, 0xb);
+        let nnn = inst & 0x0fff;
+        let x = ((inst & 0x0f00) >> 8) as usize;
+        self.pc = nnn + self.reg[x] as u16;
+    }
+
     // CXNN
     pub fn rand(&mut self, inst: u16) {
         assert_eq!((inst & 0xf000) >> 12, 0xc);
@@ -498,14 +558,24 @@ impl Chip8State {
         let y = ((inst & 0x00f0) >> 4) as usize;
         let n: u8 = (inst & 0xf) as u8;
 
-        let x = self.reg[x] as usize;
-        let y = self.reg[y] as usize;
+        let y = self.reg[y] as usize % self.screen.len();
+        let x = self.reg[x] as usize % self.screen[y].len();
         let mut carry = 0;
         for i in 0..n {
-            let byte = self.memory.read_t::<u8>(self.addr as usize +i as usize);
+            let byte = self.memory.read_t::<u8>(self.addr as usize + i as usize);
             for j in 0..8 {
-                let y = (y + i as usize) % self.screen.len();
-                let x = (x + j as usize) % self.screen[y].len();
+                let mut y = y + i as usize;
+                let mut x = x + j as usize;
+                
+                if !self.quirks_config.clipping {
+                    y %= self.screen.len();
+                    x %= self.screen[y].len();
+                }
+                
+                if y >= self.screen.len() || x >= self.screen[0].len() {
+                    break;
+                }
+                
                 let bit = ((byte >> (7-j)) & 1) == 1;
                 let before = self.screen[y][x];
                 self.screen[y][x] ^= bit;
@@ -615,24 +685,32 @@ impl Chip8State {
     pub fn reg_dump(&mut self, inst: u16) {
         assert_eq!((inst & 0xf000) >> 12, 0xf);
         assert_eq!(inst & 0x00ff, 0x55);
-        let x = ((inst & 0x0f00) >> 8) as usize;
-        for i in 0..x+1 {
+        let x = (inst & 0x0f00) >> 8;
+        for i in 0..x as usize + 1 {
             let to_write = self.reg[i].to_ne_bytes();
             self.memory.write(self.addr as usize + i, &to_write);
         }
         self.pc += 2;
+
+        if self.quirks_config.memory {
+            self.addr += x+1;
+        }
     }
 
     // FX65
     pub fn reg_load(&mut self, inst: u16) {
         assert_eq!((inst & 0xf000) >> 12, 0xf);
         assert_eq!(inst & 0x00ff, 0x65);
-        let x = ((inst & 0x0f00) >> 8) as usize;
-        for i in 0..x+1 {
+        let x = (inst & 0x0f00) >> 8;
+        for i in 0..x as usize + 1 {
             let readed = self.memory.read(self.addr as usize + i, 1);
             let value = readed[0];
             self.reg[i] = value;
         }
         self.pc += 2;
+
+        if self.quirks_config.memory {
+            self.addr += x+1;
+        }
     }
 }
